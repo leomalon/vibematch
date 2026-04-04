@@ -1,0 +1,17 @@
+# Environment variables
+.env
+
+# Data (CRITICAL)
+data/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+
+#Logs
+*.log
+logs/
+
+# Documents (optional)
+*.docx
