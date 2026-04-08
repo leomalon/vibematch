@@ -144,8 +144,7 @@ def page_scraping(categories:list):
     
     return raw_data
 
-def event_page_scraping(events:str,origin_page,id_tag):
-    events = json.loads(events)
+def event_page_scraping(events:list,origin_page,id_tag):
 
     def build_event_url(event):
         base_url = origin_page
