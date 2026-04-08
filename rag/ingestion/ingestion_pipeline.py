@@ -145,7 +145,7 @@ def define_price_range(currency: str, price, usd_to_pen: float = 3.7):
     else:  # pen_price >= 300
         return "premium"
 
-def extract_moods(events, llm_instance,provider:str):
+def extract_moods_description_public(events, llm_instance,provider:str):
     enriched = []
 
     for event in events:
@@ -163,8 +163,9 @@ def extract_moods(events, llm_instance,provider:str):
             "artistico","nocturno","familiar","intenso","fiesta","educativo","fiestero","espontáneo",
             "elegante","underground","deportivo","gastronómico","urbano"]
 
-        prompt = f"""
-            Clasifica el evento en emociones (moods)
+        prompt=f"""
+            Clasifica el evento en emociones (moods) y genera un resumen breve del evento y que sensación daría, 
+            además identifica el público objetivo al que va dirigido.
 
             Emociones permitidas:
             {ALLOWED_MOODS}
@@ -172,12 +173,26 @@ def extract_moods(events, llm_instance,provider:str):
             Reglas:
             - Selecciona solo entre 2 y 4 emociones.
             - Usa exactamente los valores en minúsculas como aparecen en la lista.
-            - Si no es claro, elige las emociones más probables sin salirte de la lista.
             - No repitas emociones.
             - Solo utiliza la lista de emociones permitida.
+            - Si no es claro, elige las emociones más probables sin salirte de la lista.
+
+            Resumen:
+            - Genera un resumen claro y objetivo de máximo 2 líneas.
+            - Elimina lenguaje promocional o redundante.
+            - Enfócate en el tipo de evento, ambiente y experiencia.
+
+            Público: 
+            - Identifica claramente el público al que va dirigido: familia, amigos, amigas, enamorada, enamorado, etc.
+
+            Salida:
             - Responde SOLO en JSON válido, sin texto adicional.
             - Formato exacto:
-                {{"emociones": ["emocion1","emocion2"]}}
+            {{
+            "emociones": ["emocion1","emocion2"],
+            "resumen": "texto breve aquí",
+            "publico": "público al que apunta"
+            }}
 
             Evento:
             Titulo: {event["titulo"]}
@@ -207,6 +222,8 @@ def extract_moods(events, llm_instance,provider:str):
             moods = json.loads(response)
 
             emociones = moods.get("emociones", [])
+            descripcion_resumen = moods.get("resumen", [])
+            publico = moods.get("publico", [])
 
             #Clean moods in case adds a mood that is not allowed
             emociones = list(set([m for m in emociones if m in ALLOWED_MOODS]))[:4]
@@ -216,6 +233,8 @@ def extract_moods(events, llm_instance,provider:str):
             emociones = []
 
         event["mood"] = emociones
+        event["descripcion"] = descripcion_resumen
+        event["público"] = publico
         enriched.append(event)
 
     return enriched
@@ -230,7 +249,7 @@ llm = Client(
 if not semantic_data:
     events_data = load_json_data(events_path)
     
-    events_with_moods = extract_moods(events_data,llm,"Ollama-cloud")
+    events_with_moods = extract_moods_description_public(events_data,llm,"Ollama-cloud")
 
     write_json_data(semantic_events_path,events_with_moods)
 
@@ -240,19 +259,22 @@ if not semantic_data:
 
 def format_event_for_embedding(event: dict) -> str:
     return f"""
-    Evento: {event['titulo']}
-    Ciudad: {event['ciudad']}
-    Categoría: {event['categoria_espaniol']}
 
-    Descripción:
+    Moods: {", ".join(event['mood'])}
+    Moods: {", ".join(event['mood'])}
+
+    Tags clave: {", ".join([tag.replace("#", "") for tag in event['tags']])}
+
+    Público objetivo: 
+    {event["público"]}
+
+    Descripción corta:
     {event['descripcion']}
 
-    Mood: {", ".join(event['mood'])}
+    Categoría: {event['categoria_espaniol']}
 
-    Tags: {", ".join([tag.replace("#", "") for tag in event['tags']])}
+    Ubicación: {event["ciudad"]}
 
-    Precio: {event['precio_rango']}
-    Ubicación: {event['direccion']}
     """
 
 formatted_events = []
