@@ -57,7 +57,7 @@ class Persistent_ChromaDB():
         docs = collection.query(
             query_texts=[query],
             n_results=n_docs,
-            include=["documents", "distances"]
+            include=["documents", "metadatas", "distances"]
         )
 
         return docs
