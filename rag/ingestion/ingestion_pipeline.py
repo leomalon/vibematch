@@ -13,14 +13,17 @@ import json
 
 #Local modules
 from  .loaders.web_scraper import page_scraping, event_page_scraping
-from .embeddings import create_vector_db
 
 #Third-party modules
-# from langchain_openai import ChatOpenAI
-from ollama import Client
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import html
+
+#Local modules
+from ..llm.ollama import ChatOllama
+from .embeddings import get_huggingface_embedding
+from ..llm.prompt_templates import build_event_classification
+from ..vectordb.chroma_db import Persistent_ChromaDB
 
 # ==========================================
 # 1. CONFIGURATION & PATHS
@@ -75,7 +78,6 @@ def clean_html_description(raw_html: str) -> str:
 
     return text
 
-
 # ==========================================
 # 3. DATA SCRAPING (ETL)
 # ==========================================
@@ -99,6 +101,7 @@ event_data = load_json_data(events_path)
 #Event moods
 semantic_data = load_json_data(semantic_events_path)
 
+#--- EVENT SCRAPING ---
 
 if not data:
     data = page_scraping(url_categories)
@@ -113,7 +116,7 @@ if not event_data:
 # ==========================================
 # 4. LLM ENRICHMENT
 # ==========================================
-def define_price_range(currency: str, price, usd_to_pen: float = 3.7):
+def define_event_price_range(currency: str, price, usd_to_pen: float = 3.7):
     """
     Classifies price into standardized ranges.
 
@@ -145,7 +148,7 @@ def define_price_range(currency: str, price, usd_to_pen: float = 3.7):
     else:  # pen_price >= 300
         return "premium"
 
-def extract_moods_description_public(events, llm_instance,provider:str):
+def enrich_events_with_llm(events:list, llm_instance):
     enriched = []
 
     for event in events:
@@ -157,65 +160,16 @@ def extract_moods_description_public(events, llm_instance,provider:str):
         event["descripcion"] = clean_html_description(event["descripcion"])
 
         #Add price range description
-        event["precio_rango"] = define_price_range(moneda,precio)
+        event["precio_rango"] = define_event_price_range(moneda,precio)
 
         ALLOWED_MOODS = ["romántico","energético","relajado","misterioso","divertido","cultural",
             "artistico","nocturno","familiar","intenso","fiesta","educativo","fiestero","espontáneo",
-            "elegante","underground","deportivo","gastronómico","urbano"]
+            "elegante","underground","deportivo","gastronómico","urbano","desconexión","aire-libre",
+            "natural","aventurero","foodie","casual","buen-ambiente","extremo"]
 
-        prompt=f"""
-            Clasifica el evento en emociones (moods) y genera un resumen breve del evento y que sensación daría, 
-            además identifica el público objetivo al que va dirigido.
-
-            Emociones permitidas:
-            {ALLOWED_MOODS}
-
-            Reglas:
-            - Selecciona solo entre 2 y 4 emociones.
-            - Usa exactamente los valores en minúsculas como aparecen en la lista.
-            - No repitas emociones.
-            - Solo utiliza la lista de emociones permitida.
-            - Si no es claro, elige las emociones más probables sin salirte de la lista.
-
-            Resumen:
-            - Genera un resumen claro y objetivo de máximo 2 líneas.
-            - Elimina lenguaje promocional o redundante.
-            - Enfócate en el tipo de evento, ambiente y experiencia.
-
-            Público: 
-            - Identifica claramente el público al que va dirigido: familia, amigos, amigas, enamorada, enamorado, etc.
-
-            Salida:
-            - Responde SOLO en JSON válido, sin texto adicional.
-            - Formato exacto:
-            {{
-            "emociones": ["emocion1","emocion2"],
-            "resumen": "texto breve aquí",
-            "publico": "público al que apunta"
-            }}
-
-            Evento:
-            Titulo: {event["titulo"]}
-            Descripción: {event["descripcion"]}
-            Categoría: {event["categoria_espaniol"]}
-            Tags: {event["tags"]}
-            """
+        prompt= build_event_classification(event,ALLOWED_MOODS)
         
-        if provider=="OpenAI":
-            response = llm_instance.invoke(prompt)
-            response = response.content
-        
-        elif provider=="Ollama-cloud":
-
-            messages = [
-            {
-                'role': 'user',
-                'content': prompt,
-            }
-            ]
-
-            response = llm_instance.chat('gpt-oss:120b-cloud', messages=messages)
-            response = response.message.content
+        response = llm_instance.invoke(prompt)
 
 
         try:
@@ -241,15 +195,12 @@ def extract_moods_description_public(events, llm_instance,provider:str):
 
 load_dotenv()
 
-llm = Client(
-    host="https://ollama.com",
-    headers={'Authorization': 'Bearer ' + os.environ.get('OLLAMA_API_KEY')}
-)
+llm = ChatOllama(os.environ.get("OLLAMA_API_KEY"))
 
 if not semantic_data:
     events_data = load_json_data(events_path)
     
-    events_with_moods = extract_moods_description_public(events_data,llm,"Ollama-cloud")
+    events_with_moods = enrich_events_with_llm(events_data,llm)
 
     write_json_data(semantic_events_path,events_with_moods)
 
@@ -277,20 +228,29 @@ def format_event_for_embedding(event: dict) -> str:
 
     """
 
-formatted_events = []
-
 events = load_json_data(semantic_events_path)
 
-for event in events:
-    formatted_events.append(format_event_for_embedding(event=event))
+formatted_events = [format_event_for_embedding(event=event) for event in events]
+event_metadatas = [
+    {
+        "titulo": event.get("titulo"),
+        "url": event.get("url_evento"),
+        "direccion": event.get("direccion"),
+        "categoria": event.get("categoria_espaniol"),
+        "precio": event.get("precio"),
+        "moneda": event.get("moneda")
+    }
+    for event in events
+]
+
 
 # ==========================================
 # 6. EMBEDDING GENERATION AND STORING
 # ==========================================
-collection = create_vector_db(persistent_db_path,"vibe_collection")
 
-#Store vectors
-collection.add(
-    documents=formatted_events,
-    ids=[f"id{i+1}" for i in range(len(formatted_events))]
-)
+vector_db = Persistent_ChromaDB(persistent_db_path,get_huggingface_embedding())
+
+#Creates and stores vectors
+vector_db.create_vector_db("vibe_collection",
+                           formatted_events,
+                           event_metadatas)
