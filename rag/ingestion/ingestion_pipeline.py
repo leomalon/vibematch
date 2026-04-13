@@ -40,6 +40,7 @@ web_page_config = BASE_DIR/"config"/"web_page.json"
 raw_data_path = BASE_DIR/"data"/"raw"/"raw.json"
 events_path = BASE_DIR/"data"/"processed"/"events.json"
 semantic_events_path = BASE_DIR / "data" / "processed" / "semantic_events.json"
+ig_path = BASE_DIR/"data"/"processed"/"ig_data.json"
 
 #Vector DB path
 # persistent_db_path = BASE_DIR / "data" / "chroma_db"
@@ -93,25 +94,28 @@ id_tag = web_page[0]["id_tag_data"]
 url_categories = load_json_data(config_path)
 
 #Raw data
-data = load_json_data(raw_data_path)
+raw_data = load_json_data(raw_data_path)
 
 #Event processed data
-event_data = load_json_data(events_path)
+raw_event_data = load_json_data(events_path)
+
+#Ig data
+ig_event_data = load_json_data(ig_path)
 
 #Event moods
-semantic_data = load_json_data(semantic_events_path)
+event_semantic_data = load_json_data(semantic_events_path)
 
 #--- EVENT SCRAPING ---
 
-if not data:
-    data = page_scraping(url_categories)
+if not raw_data:
+    raw_data = page_scraping(url_categories)
 
-    write_json_data(raw_data_path,data)
+    write_json_data(raw_data_path,raw_data)
 
-if not event_data:
-    event_data = event_page_scraping(data,origin_page,id_tag)
+if not raw_event_data:
+    raw_event_data = event_page_scraping(raw_data,origin_page,id_tag)
 
-    write_json_data(events_path,event_data)
+    write_json_data(events_path,raw_event_data)
 
 # ==========================================
 # 4. LLM ENRICHMENT
@@ -197,7 +201,7 @@ load_dotenv()
 
 llm = ChatOllama(os.environ.get("OLLAMA_API_KEY"))
 
-if not semantic_data:
+if not event_semantic_data:
     events_data = load_json_data(events_path)
     
     events_with_moods = enrich_events_with_llm(events_data,llm)
@@ -234,6 +238,7 @@ formatted_events = [format_event_for_embedding(event=event) for event in events]
 event_metadatas = [
     {
         "titulo": event.get("titulo"),
+        "descripcion":event.get("descripcion"),
         "url": event.get("url_evento"),
         "direccion": event.get("direccion"),
         "categoria": event.get("categoria_espaniol"),
