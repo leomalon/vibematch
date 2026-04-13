@@ -9,7 +9,7 @@ class PromptTemplates:
             además identifica el público objetivo al que va dirigido.
 
             Emociones permitidas:
-            {moods}
+            {allowed_moods}
 
             Reglas:
             - Selecciona solo entre 2 y 4 emociones.
@@ -68,40 +68,62 @@ class PromptTemplates:
                     - Si no encuentras la ubicación entonces asume que es de la ciudad de Lima
 
                     Salida:
-                    - Responde SOLO en JSON válido.
+                    - Responde solo en formato texto según el ejemplo.
                     - No agregues texto adicional.
 
                     Formato exacto:
-                    {{
-                    "mood": ["mood1", "mood2"],
-                    "publico_objetivo": "valor",
-                    "categoria": "valor o null",
-                    "ciudad":"ciudad",
-                    }}
+
+                    "
+                    Moods: mood_1, mood_2, mood_3, ...
+                    Moods: mood_1, mood_2, mood_3, ...
+
+                    Tags clave: tag1, tag2, tag3, ...
+
+                    Público objetivo: pareja, amigos, familia, etc.
+
+                    Categoría: valor
+
+                    Ubicación: ciudad
+                    "
 
                     Input del usuario:
                     "{user_query}"
                     """
 
     RECOMMENDATION_PROMPT = """"
-        Eres un sistema experto en recomendar eventos según la vibra y
-        ambiente que solicita el usuario.
+        Eres un sistema experto en recomendar eventos/planes según la vibra,
+        ambiente y tipo de categoría que solicita el usuario.
 
         Instrucciones:
         - Encuentra los eventos que más se ajusten a la descripción del usuario.
-        - Si de los eventos enviados como contexto no encuentras ninguno, entonces recomienda el evento más cercano a lo solicitado.
-        - En tu respuesta solo indica el título del evento y la descripción del evento.
+        - Si de los eventos enviados como contexto no encuentras ninguno, entonces recomienda un evento que sea lo más cercano a lo solicitado.
+        - Tu respuesta debe ser JSON válido con los siguientes campos: titulo, descripcion, categoria, precio, moneda y url del evento.
+        - Devuelve SOLO JSON válido. No incluyas texto adicional.
 
-        Ejemplo de respuesta: 
-        'Según lo que quieres te recomiendo estos eventos:
-        Evento 1: 
-        Título: Titulo1
-        Descripción: Descripción1
 
-        Evento2: 
-        Título: Título2
-        Descripción: Descripción2
-        ...
+        Ejemplo de respuesta:
+        '
+        [
+            {{
+                "titulo": "string",
+                "descripcion":"string",
+                "url": "string",
+                "direccion":"string",
+                "categoria": "string",
+                "precio": 0,
+                "moneda": "string"
+            }},
+            {{
+                "titulo": "string",
+                "descripcion":"string",
+                "url": "string",
+                "direccion":"string",
+                "categoria": "string",
+                "precio": 0,
+                "moneda": "string"
+            }},
+            ...
+        ]
         '
 
         Contexto:
@@ -113,7 +135,7 @@ class PromptTemplates:
         """
 
 def build_event_classification(event: dict, allowed_moods: list[str]) -> str:
-    return PromptTemplates.EVENT_QUERY.format(
+    return PromptTemplates.EVENT_ENRICHMENT.format(
         allowed_moods=", ".join(allowed_moods),
         titulo=event.get("titulo", ""),
         descripcion=event.get("descripcion", ""),
