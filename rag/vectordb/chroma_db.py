@@ -19,7 +19,7 @@ class Persistent_ChromaDB():
         )
 
 
-    def create_vector_db(self,collection_name:str,documents:list,metadata:dict):
+    def create_vector_db(self,collection_name:str,documents:list,metadata:list):
 
         client = self.persistent_client
 
@@ -41,7 +41,7 @@ class Persistent_ChromaDB():
 
         collection.add(
             documents=documents,
-            metadatas=[metadata],
+            metadatas=metadata,
             ids=[f"id{i+1}" for i in range(len(documents))]
         )
     
