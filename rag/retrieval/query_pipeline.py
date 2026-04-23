@@ -9,8 +9,8 @@ from pathlib import Path
 #Langchain module
 
 #Local modules
-from ..ingestion.embeddings import get_huggingface_embedding
-from ..vectordb.chroma_db import Persistent_ChromaDB
+from rag.ingestion.embeddings import get_huggingface_embedding
+from rag.vectordb.chroma_db import Persistent_ChromaDB
 
 # ==========================================
 # 1. INITIAL CONFIGURATION (PATHS AND VARIABLES)
