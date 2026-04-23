@@ -6,7 +6,7 @@ Initializes FastAPI app and registers routes
 """
 
 from fastapi import FastAPI
-from .routes import events
+from routes import events
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
