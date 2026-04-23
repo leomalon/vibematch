@@ -15,10 +15,11 @@ from fastapi import APIRouter
 from dotenv import load_dotenv
 
 #Local modules
-from ..schemas.event import QueryRequest, EventResponse
-from ..services.retrieval import RetrievalService
-from ..services.understanding import QueryUnderstandingService
-from ..services.response_filter import ResponseFilterService 
+from backend.schemas.event import QueryRequest, EventResponse
+from backend.services.retrieval import RetrievalService
+from backend.services.understanding import QueryUnderstandingService
+from backend.services.response_filter import ResponseFilterService
+
 from rag.retrieval.query_pipeline import vector_db
 
 
