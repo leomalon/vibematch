@@ -14,7 +14,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # for dev only
+    allow_origins=["https://vibeematch.xyz"],  # for dev only
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
