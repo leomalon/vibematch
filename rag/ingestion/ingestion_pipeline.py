@@ -12,7 +12,7 @@ from pathlib import Path
 import json
 
 #Local modules
-from  .loaders.web_scraper import page_scraping, event_page_scraping
+from  rag.ingestion.loaders.web_scraper import page_scraping, event_page_scraping
 
 #Third-party modules
 from dotenv import load_dotenv
@@ -20,10 +20,10 @@ from bs4 import BeautifulSoup
 import html
 
 #Local modules
-from ..llm.ollama import ChatOllama
-from .embeddings import get_huggingface_embedding
-from ..llm.prompt_templates import build_event_classification
-from ..vectordb.chroma_db import Persistent_ChromaDB
+from rag.llm.ollama import ChatOllama
+from rag.ingestion.embeddings import get_huggingface_embedding
+from rag.llm.prompt_templates import build_event_classification
+from rag.vectordb.chroma_db import Persistent_ChromaDB
 
 # ==========================================
 # 1. CONFIGURATION & PATHS
@@ -52,6 +52,11 @@ persistent_db_path = "C:/chroma_db"
 # ==========================================
 
 def load_json_data(data_path: str | Path):
+
+    
+    if not data_path.exists():
+        return []
+
     with open(data_path, "r", encoding="utf-8") as f:
         content = f.read().strip()
 
@@ -108,11 +113,13 @@ event_semantic_data = load_json_data(semantic_events_path)
 #--- EVENT SCRAPING ---
 
 if not raw_data:
+    print("There is no raw data")
     raw_data = page_scraping(url_categories)
 
     write_json_data(raw_data_path,raw_data)
 
 if not raw_event_data:
+    print("There is no event data")
     raw_event_data = event_page_scraping(raw_data,origin_page,id_tag)
 
     write_json_data(events_path,raw_event_data)
