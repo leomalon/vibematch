@@ -166,50 +166,55 @@ def event_page_scraping(events:list,origin_page,id_tag):
             for key in main_category:
                 print(key)
                 for event in main_category[key]:
-                    
-                    time.sleep(random.uniform(7,12))
+                    for i in range(3):
+                        try:
+                            time.sleep(random.uniform(7,12))
 
-                    page.goto(build_event_url(event),wait_until="domcontentloaded",timeout=10000)
+                            page.goto(build_event_url(event),wait_until="domcontentloaded",timeout=10000)
 
-                    html = page.content()
+                            html = page.content()
 
-                    soup_object = BeautifulSoup(html, "html.parser")
-                    
-                    event_complete_data = soup_object.find("script", id=id_tag)
+                            soup_object = BeautifulSoup(html, "html.parser")
+                            
+                            event_complete_data = soup_object.find("script", id=id_tag)
 
-                    if not event_complete_data:
-                        break
-                    
-                    json_str = event_complete_data.text[38:-10]
+                            if not event_complete_data:
+                                break
+                            
+                            json_str = event_complete_data.text[38:-10]
 
-                    event_json = json.loads(json_str)["activity"]
+                            event_json = json.loads(json_str)["activity"]
 
-                    description = event_json["description"]
-                    location_city = event_json["city"]
-                    location_street =  event_json["address"]
-                    category_english = event["category_url"]
-                    url_event = build_event_url(event)
-                    
-                    #Extract tags
-                    tags = []
-                    for tag in event_json["tags"]:
-                        tags.append(tag["name"])
+                            description = event_json["description"]
+                            location_city = event_json["city"]
+                            location_street =  event_json["address"]
+                            category_english = event["category_url"]
+                            url_event = build_event_url(event)
+                            
+                            #Extract tags
+                            tags = []
+                            for tag in event_json["tags"]:
+                                tags.append(tag["name"])
 
-                    processed_events.append({
-                        "categoria_ingles":category_english,
-                        "categoria_espaniol":event["category_spanish"],
-                        "ciudad":location_city,
-                        "direccion":location_street,
-                        "precio":event["price"],
-                        "moneda":event["currency"],
-                        "titulo":event["title"],
-                        "descripcion":description,
-                        "mood":[],
-                        "tags":tags,
-                        "url_evento":url_event
-                    })
-                    
+                            processed_events.append({
+                                "categoria_ingles":category_english,
+                                "categoria_espaniol":event["category_spanish"],
+                                "ciudad":location_city,
+                                "direccion":location_street,
+                                "precio":event["price"],
+                                "moneda":event["currency"],
+                                "titulo":event["title"],
+                                "descripcion":description,
+                                "mood":[],
+                                "tags":tags,
+                                "url_evento":url_event
+                            })
+                            print(processed_events[-1])
+                            break
 
+                        except Exception as e:
+                            print(f"Retry {i+1}/3 failed: {e}")
+                            time.sleep(2)
         context.close()
         browser.close()
     
