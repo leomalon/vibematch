@@ -37,7 +37,7 @@ retrieval_service = RetrievalService(vectorstore=vector_db)
 @router.post("/search", response_model=list[EventResponse])
 def search_events(request: QueryRequest):
     structured_query = query_understanding_service.parse(request.query)
-    results = retrieval_service.search_top_n(structured_query,"vibe_collection",7,5)
+    results = retrieval_service.search_top_n(structured_query,"vibe_collection",12,8)
 
     if not results:
         return []
