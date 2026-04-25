@@ -176,7 +176,7 @@ def enrich_events_with_llm(events:list, llm_instance):
         ALLOWED_MOODS = ["romántico","energético","relajado","misterioso","divertido","cultural",
             "artistico","nocturno","familiar","intenso","fiesta","educativo","fiestero","espontáneo",
             "elegante","underground","deportivo","gastronómico","urbano","desconexión","aire-libre",
-            "natural","aventurero","foodie","casual","buen-ambiente","extremo"]
+            "natural","aventurero","foodie","casual","buen-ambiente","extremo","íntimo"]
 
         prompt= build_event_classification(event,ALLOWED_MOODS)
         
