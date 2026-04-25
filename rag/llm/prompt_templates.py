@@ -54,16 +54,26 @@ class PromptTemplates:
                     Moods permitidos:
                     {allowed_moods}
 
-                    Reglas:
+
+                    REGLA PRIORITARIA (CRÍTICA):
+                    - Si el input del usuario contiene intención explícita de actividad sexual o íntima (por ejemplo: "sex", "tener sexo", "tener relaciones sexuales", "noche íntima", "detonar"):
+                        - Asigna EXACTAMENTE:
+                            Moods: romántico, íntimo
+                            Público objetivo: pareja
+                            Categoría: hotel
+                        - Ignora cualquier otra inferencia
+                        - Continúa completando ubicación normalmente
+
+                    REGLAS GENERALES:
                     - Selecciona entre 1 y 3 moods como máximo.
                     - Usa exactamente los valores en minúsculas como aparecen en la lista.
                     - Si el usuario no menciona moods explícitos, infiere los más probables según el contexto.
                     - No inventes moods fuera de la lista.
 
-                    - publico_objetivo debe ser una descripción corta (ej: "parejas", "amigos", "familia", "solo", "jóvenes").
+                    - publico_objetivo debe ser una descripción corta (ej: "parejas", "amigos", "familia", "solo").
                     - Si no es claro, infiere el más probable.
 
-                    - categoria debe ser un tipo de evento (ej: "teatro", "concierto", "fiesta", "gastronomía", "cultural").
+                    - categoria debe ser un tipo de evento (ej: "teatro", "concierto", "fiesta", "gastronomía", "cultural","comedia").
                     - Si no es claro, devuelve null.
                     - Si no encuentras la ubicación entonces asume que es de la ciudad de Lima
 
@@ -95,6 +105,22 @@ class PromptTemplates:
 
         OBJETIVO:
         Seleccionar únicamente los eventos del contexto que mejor coincidan con la solicitud del usuario.
+
+
+        FUENTE DE VERDAD:
+        - Debes basarte PRINCIPALMENTE en el query estructurado proporcionado.
+        - NO reinterpretar el lenguaje original del usuario.
+        - Usa los campos (moods, categoría, público objetivo) como criterios de filtrado.
+
+        REGLA PRIORITARIA:
+        - Si el query estructurado contiene:
+            Moods: romantico, intimo
+            Categoría: hotel
+        - Entonces:
+            - SOLO selecciona eventos cuya categoría sea "hotel"
+            - Prioriza eventos que impliquen privacidad, pareja o ambiente íntimo
+            - Ignora eventos como restaurantes, conciertos, fiestas, etc.
+
 
         REGLAS:
         - Usa SOLO la información del contexto proporcionado.
