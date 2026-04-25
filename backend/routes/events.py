@@ -44,4 +44,7 @@ def search_events(request: QueryRequest):
 
     filter_response = response_filter_service.json_response(results,structured_query)
 
+    if not filter_response:
+        return []
+
     return filter_response
