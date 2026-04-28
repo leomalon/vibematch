@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import ColorBends from '../Components/ui/Background';
-import { ExternalLink,Search } from "lucide-react";
+import { ExternalLink,Search,SlidersHorizontal } from "lucide-react";
+import GooeyNav from '../Components/features/NavButton'
+import CategorySidebar from "@/Components/features/SideBar";
+import { Hedvig_Letters_Sans } from "next/font/google";
+
 
 export default function Home() {
   const [query, setQuery] = useState("");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const resetSearch = () => {
     setQuery("");
@@ -46,19 +53,48 @@ export default function Home() {
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
   };
 
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 850);
+    check(); // run once on mount
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check); // cleanup
+  }, []);
+
+  const CATEGORIES = [
+  "Arte-cultura",
+  "Teatro",
+  "Restaurantes",
+  "Bares",
+  "Conciertos",
+  "Hoteles",
+  "Deportes",
+  "Viaje-aventura",
+  "Paseos",
+  "Ocio",
+  "Fútbol",
+  "Entretenimiento",
+  "Cursos-talleres",
+  "Seminarios",
+  "Stand-up"
+  ];
+
+
   const styles = {
     page: {
       position: "relative",
-      minHeight: "100vh",
+      maxHeight: "100vh",
+      maxWidth:'100vw',
       color: "white",
+      overflow:'hidden'
     },
 
   background: {
     position: "fixed",
     top: 0,
     left: 0,
-    width: "100%",
-    height: "100%",
+    maxWidth:'100vw',
+    height:'100vh',
+    width:'100vw',
     zIndex: 0,
     pointerEvents: "none",
   },
@@ -67,19 +103,53 @@ export default function Home() {
   header: {
     position: "absolute",
     top: "20px",
-    left: "30px",
     zIndex: 2,
+    display:"flex",
+    width:'100%',
+    justifyContent:'space-between',
   },
 
   logo: {
     fontSize: "24px",
     fontWeight: "600",
     letterSpacing: "1px",
+    marginLeft:'15px'
   },
+
+  // Mobile toggle button (top-right)
+  mobileToggle: {
+    marginRight:'15px',
+    zIndex: 101,
+    background: "rgba(255,255,255,0.1)",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255,255,255,0.2)",
+    borderRadius: "50%",
+    width: "40px", height: "40px",
+    display: "flex",
+    alignItems: "center", justifyContent: "center",
+    cursor: "pointer",
+    color: "white",
+  },
+  // Overlay behind mobile sidebar
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.4)",
+    zIndex: 99,
+  },
+
+  desktopContainer : {
+    position: "fixed",
+    top: 100,
+    zIndex:800,
+    marginLeft:'15px'
+  },
+
 
   // 🔥 Center container
  centerContainer: (hasSearched) => ({
-    position: "relative",
+    position: "fixed",
+    marginTop:"35vh",
     marginTop: hasSearched ? "20px" : "35vh",
     display: "flex",
     justifyContent: "center",
@@ -255,6 +325,7 @@ export default function Home() {
 
 return (
   <div style={styles.page}>
+
     {/* Background */}
     <div style={styles.background}>
       <ColorBends
@@ -276,40 +347,92 @@ return (
     {/* Top bar */}
     <div style={styles.header}>
       <h1 style={styles.logo}>VibeMatch</h1>
-    </div>
-
-  {/* Centered search */}
-  <div style={styles.centerContainer(hasSearched)}>
-    <div style={styles.inputWrapper}>
-      <input
-        type="text"
-        placeholder="Describe el plan que quieres..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && searchEvents()}
-        style={styles.input}
-      />
-
-      <button onClick={searchEvents} style={styles.innerButton}>
-        <Search size={18} />
-      </button>
-
-      {query && (
-        <button onClick={resetSearch} style={styles.resetButton}>
-          ✕
-        </button>
-      )}
-    </div>
-  </div>
-
-  {/* Results */}
-  <main style={styles.resultsContainer}>
-    {loading && (
-      <div style={styles.loaderContainer}>
-        <div style={styles.spinner}></div>
-        <p style={styles.loaderText}>Cargando...</p>
+      <div style={{position: 'relative', display:'flex' }}>
+        {/* Home button */}
+      
+      {isMobile && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          style={styles.mobileToggle}
+        >
+          <SlidersHorizontal size={18} />
+        </button>)
+      }
+      
       </div>
+
+
+    </div>
+
+    {/* Mobile overlay */}
+    {(isMobile && sidebarOpen) && (
+      <div style={styles.overlay} onClick={() => setSidebarOpen(false)} />
+  
     )}
+  
+    {/* Mobile sidebar */}
+    {(isMobile && sidebarOpen) && (
+      
+      <div className="sidebar-scroll">
+          <CategorySidebar
+            CATEGORIES={CATEGORIES}
+            isMobile={isMobile}
+            selected={selectedCategory}
+            onSelect={setSelectedCategory}
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+        />
+      </div>)
+    }
+
+
+    {/* Desktop sidebar */}
+    {!isMobile && 
+      (<div style={styles.desktopContainer} className="sidebar-scroll">
+        <CategorySidebar
+          CATEGORIES={CATEGORIES}
+          isMobile={isMobile}
+          selected={selectedCategory}
+          onSelect={setSelectedCategory}
+          isOpen={true}
+          onClose={() => {}}
+        />
+      </div>)
+    }
+
+
+    {/* Centered search */}
+    <div style={styles.centerContainer(hasSearched)}>
+      <div style={styles.inputWrapper}>
+        <input
+          type="text"
+          placeholder="Describe el plan que quieres..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && searchEvents()}
+          style={styles.input}
+        />
+
+        <button onClick={searchEvents} style={styles.innerButton}>
+          <Search size={18} />
+        </button>
+
+        {query && (
+          <button onClick={resetSearch} style={styles.resetButton}>
+            ✕
+          </button>
+        )}
+      </div>
+    </div>
+
+    {/* Results */}
+    <main style={styles.resultsContainer}>
+      {loading && (
+        <div style={styles.loaderContainer}>
+          <div style={styles.spinner}></div>
+          <p style={styles.loaderText}>Cargando...</p>
+        </div>
+      )}
 
     {!loading && hasSearched && events.length === 0 && (
       <p>Lo sentimos, no se han encontrado resultados...</p>
@@ -343,7 +466,11 @@ return (
       </div>
           ))}
         </div>
-      </main>
-      </div>
+    </main>
+
+
+
+  </div>
+
 );
 }
