@@ -13,6 +13,7 @@ class EventResponse(BaseModel):
     categoria: str
     precio: float | None
     moneda: str
+    tags:list
 
 
 class QueryRequest(BaseModel):
