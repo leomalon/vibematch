@@ -1,6 +1,7 @@
 import {  X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-export default function CategorySidebar({ CATEGORIES, isMobile, selected, onSelect, isOpen, onClose }) {
+export default function CategorySidebar({ CATEGORIES, isMobile, selected, isOpen, onClose }) {
   const desktopSideBarStyle = {
     width: "200px",
     height:'550px',
@@ -44,6 +45,15 @@ export default function CategorySidebar({ CATEGORIES, isMobile, selected, onSele
     overflowX: "hidden"
   };
 
+  const router = useRouter();
+
+  const toSlug = (text) =>
+    text
+    .toLowerCase()
+    .normalize("NFD") //Decompose accented characters into base + diacritic
+    .replace(/[\u0300-\u036f]/g, "") //Remove accents
+    .replace(/\s+/g, "-");//Replace whitespace with hyphens
+
   return (
     <div style={isMobile ? mobileSidebarStyle : desktopSideBarStyle}>
       <div style={{
@@ -77,14 +87,20 @@ export default function CategorySidebar({ CATEGORIES, isMobile, selected, onSele
       {CATEGORIES.map((cat) => (
         <button
           key={cat}
-          onClick={() => { onSelect(cat); if (isMobile) onClose(); }}
+          onClick={() => {
+            const slug = toSlug(cat)
+
+            router.push(`/categories/${slug}`);
+
+            if (isMobile) onClose();
+          }}
           style={{
             padding: "8px 10px",
             borderRadius: "8px",
-            background: selected === cat ? "rgba(0,255,209,0.15)" : "transparent",
+            background: selected === toSlug(cat) ? "rgba(0,255,209,0.15)" : "transparent",
             border: "none",
-            color: selected === cat ? "#00ffd1" : "rgba(255,255,255,0.8)",
-            fontWeight: selected === cat ? "500" : "400",
+            color: selected === toSlug(cat) ? "#00ffd1" : "rgba(255,255,255,0.8)",
+            fontWeight: selected === toSlug(cat) ? "500" : "400",
             fontSize: "14px",
             textAlign: "left",
             cursor: "pointer",
