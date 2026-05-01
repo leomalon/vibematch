@@ -102,7 +102,7 @@ def search_events(request: QueryRequest):
 
     return parsed_results
 
-@router.get("/categories/{category}",response_model=list[EventResponse])
+@router.get("/categories/{category}")
 def get_events_by_category(category: str):
     
     events = load_json_data(data_path)
