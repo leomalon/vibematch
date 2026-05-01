@@ -21,15 +21,4 @@ class RetrievalService:
         # Keep top-n only
         top_events = [metadata for event, _,metadata in ranked_events[:top_n]]
 
-
-        # events = [
-        #     f"[EVENTO {i+1}]\n"
-        #     f"{doc}\n"
-        #     f"Título: {meta.get('titulo')}\n"
-        #     f"URL: {meta.get('url')}"
-        #     f"Categoria evento: {meta.get("categoria")}"
-        #     f"Precio: {meta.get("moneda")} {meta.get("precio")}"
-        #     for i, (doc, meta) in enumerate(top_docs)
-        # ]
-
-        return str(top_events)
+        return top_events
