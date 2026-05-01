@@ -32,11 +32,11 @@ body {
 }
 
 /* Chrome, Edge, Safari */
-:global(.sidebar-scroll::-webkit-scrollbar) {
+.sidebar-scroll::-webkit-scrollbar {
   width: 6px;
 }
 
-:global(.sidebar-scroll::-webkit-scrollbar-thumb) {
+.sidebar-scroll::-webkit-scrollbar-thumb {
   background-color: #888;
   border-radius: 10px;
 }
