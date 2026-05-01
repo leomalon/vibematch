@@ -1,11 +1,9 @@
 "use client";
 
 import { useState,useEffect } from "react";
-import ColorBends from '../Components/ui/Background';
+import ColorBends from '@/Components/ui/Background';
 import { ExternalLink,Search,SlidersHorizontal } from "lucide-react";
-import GooeyNav from '../Components/features/NavButton'
 import CategorySidebar from "@/Components/features/SideBar";
-import { Hedvig_Letters_Sans } from "next/font/google";
 
 
 export default function Home() {
@@ -61,21 +59,22 @@ export default function Home() {
   }, []);
 
   const CATEGORIES = [
-  "Arte-cultura",
-  "Teatro",
-  "Restaurantes",
-  "Bares",
-  "Conciertos",
-  "Hoteles",
-  "Deportes",
-  "Viaje-aventura",
-  "Paseos",
-  "Ocio",
-  "Fútbol",
-  "Entretenimiento",
-  "Cursos-talleres",
-  "Seminarios",
-  "Stand-up"
+    "Arte-cultura",
+    "Teatro",
+    "Restaurante",
+    "Bar",
+    "Rooftop",
+    "Conciertos",
+    "Hotel",
+    "Deportes",
+    "Viaje-aventura",
+    "Paseo",
+    "Ocio",
+    "Fútbol",
+    "Entretenimiento",
+    "Cursos-talleres",
+    "Seminarios-Conferencias",
+    "Stand-up"
   ];
 
 
@@ -378,10 +377,9 @@ return (
             CATEGORIES={CATEGORIES}
             isMobile={isMobile}
             selected={selectedCategory}
-            onSelect={setSelectedCategory}
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
-        />
+          />
       </div>)
     }
 
@@ -393,7 +391,6 @@ return (
           CATEGORIES={CATEGORIES}
           isMobile={isMobile}
           selected={selectedCategory}
-          onSelect={setSelectedCategory}
           isOpen={true}
           onClose={() => {}}
         />
