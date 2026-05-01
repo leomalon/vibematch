@@ -21,7 +21,7 @@ import html
 
 #Local modules
 from rag.llm.ollama import ChatOllama
-from rag.ingestion.embeddings import get_huggingface_embedding
+from rag.ingestion.embeddings import get_openai_embedding
 from rag.llm.prompt_templates import build_event_classification
 from rag.vectordb.chroma_db import Persistent_ChromaDB
 
@@ -242,25 +242,33 @@ def format_event_for_embedding(event: dict) -> str:
 events = load_json_data(semantic_events_path)
 
 formatted_events = [format_event_for_embedding(event=event) for event in events]
-event_metadatas = [
-    {
+event_metadatas = []
+
+for event in events:
+    metadata = {
         "titulo": event.get("titulo"),
-        "descripcion":event.get("descripcion"),
+        "descripcion": event.get("descripcion"),
         "url": event.get("url_evento"),
         "direccion": event.get("direccion"),
         "categoria": event.get("categoria_espaniol"),
         "precio": event.get("precio"),
-        "moneda": event.get("moneda")
+        "moneda": event.get("moneda"),
     }
-    for event in events
-]
+
+    tags = event.get("tags")
+
+    # Only add tags if valid and non-empty
+    if isinstance(tags, list) and len(tags) > 0:
+        metadata["tags"] = tags
+
+    event_metadatas.append(metadata)
 
 
 # ==========================================
 # 6. EMBEDDING GENERATION AND STORING
 # ==========================================
 
-vector_db = Persistent_ChromaDB(persistent_db_path,get_huggingface_embedding())
+vector_db = Persistent_ChromaDB(persistent_db_path,get_openai_embedding("text-embedding-3-large"))
 
 #Creates and stores vectors
 vector_db.create_vector_db("vibe_collection",
