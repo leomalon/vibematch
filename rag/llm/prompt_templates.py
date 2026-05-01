@@ -54,10 +54,14 @@ class PromptTemplates:
                     Moods permitidos:
                     {allowed_moods}
 
+                    RESTRICCIÓN IMPORTANTE:
+                    - El mood "íntimo" SOLO puede usarse cuando se activa la REGLA PRIORITARIA (intención sexual explícita).
+                    - NO usar "íntimo" para citas románticas normales, salidas en pareja o contextos románticos generales.
+                    - Para citas románticas estándar, usar únicamente "romántico" u otros moods apropiados.
 
                     REGLA PRIORITARIA (CRÍTICA):
-                    - Si el input del usuario contiene intención explícita de actividad sexual o íntima (por ejemplo: "sex", "tener sexo", "tener relaciones sexuales", "noche íntima", "detonar"):
-                        - Asigna EXACTAMENTE:
+                    - Si el input del usuario contiene intención explícita de actividad sexual (por ejemplo: "sex", "tener sexo", "tener relaciones sexuales", "noche íntima", "detonar"):
+                        - Asigna EXACTAMENTE lo siguiente:
                             Moods: romántico, íntimo
                             Público objetivo: pareja
                             Categoría: hotel
@@ -73,8 +77,9 @@ class PromptTemplates:
                     - publico_objetivo debe ser una descripción corta (ej: "parejas", "amigos", "familia", "solo").
                     - Si no es claro, infiere el más probable.
 
-                    - categoria debe ser un tipo de evento (ej: "teatro", "concierto", "fiesta", "gastronomía", "cultural","comedia").
-                    - Si no es claro, devuelve null.
+                    - categoria debe ser un tipo de evento o establecimiento (ej: "teatro", "concierto", "fiesta", "gastronomía", "cultural","comedia","restaurante", "bar","rooftop", etc.).
+                    - DEBES inferir una categoría probable basada en el contexto del usuario.
+                    - SOLO devuelve null si no existe absolutamente ninguna pista en el input.
                     - Si no encuentras la ubicación entonces asume que es de la ciudad de Lima
 
                     Salida:
