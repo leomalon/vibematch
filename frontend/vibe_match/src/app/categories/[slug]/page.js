@@ -89,10 +89,17 @@ export default function CategoryPage({ params }) {
 
   const styles = {
     container: {
-      maxWidth: "900px",
-      margin: "0 auto",
-      padding: "20px",
-      color: "white",
+    position: "relative",
+    zIndex: 2,
+    maxWidth: "900px",
+    marginLeft: "auto",
+    marginRight: "auto",
+
+    height: "80vh",
+    display: "flex",
+    flexDirection: "column",
+
+    overflow: "hidden",
     },
 
     title: {
@@ -123,6 +130,8 @@ export default function CategoryPage({ params }) {
     grid: {
       display: "grid",
       gap: "15px",
+      overflowY: "auto",
+      overflowX: "hidden",
     },
     cardHeader: {
     display: "flex",
@@ -189,7 +198,7 @@ export default function CategoryPage({ params }) {
       )}
 
       {/* Events */}
-      <div style={styles.grid}>
+      <div style={styles.grid} className="sidebar-scroll" >
         {filteredEvents.map((event, i) => (
           <div key={i} style={styles.card}>
             {/* Top row: Title + action */}

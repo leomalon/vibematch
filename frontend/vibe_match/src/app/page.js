@@ -213,11 +213,14 @@ export default function Home() {
   resultsContainer: {
     position: "relative",
     zIndex: 2,
-    marginTop: "50px",
     padding: "2rem",
     maxWidth: "900px",
+    maxHeight:"80vh",
+    marginTop:"80px",
     marginLeft: "auto",
     marginRight: "auto",
+    overflowY: "auto",
+    overflowX: "hidden",
   },
 
   grid: {
@@ -423,7 +426,7 @@ return (
     </div>
 
     {/* Results */}
-    <main style={styles.resultsContainer}>
+    <main style={styles.resultsContainer} className="sidebar-scroll">
       {loading && (
         <div style={styles.loaderContainer}>
           <div style={styles.spinner}></div>
