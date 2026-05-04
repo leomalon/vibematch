@@ -26,7 +26,7 @@ export default function CategorySidebar({ CATEGORIES, isMobile, selected, isOpen
     position: "fixed",
     top: 0,
     right: 0,
-    maxheight: "100vh",
+    height: "98dvh",
     width: "240px",
     background: isMobile ? "rgba(10,10,20,0.65)":'transparent',
     backdropFilter: "blur(20px)",
