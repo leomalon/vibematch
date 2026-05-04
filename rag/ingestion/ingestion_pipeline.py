@@ -29,6 +29,8 @@ from rag.vectordb.chroma_db import Persistent_ChromaDB
 # 1. CONFIGURATION & PATHS
 # ==========================================
 
+load_dotenv()
+
 # Always resolve from root
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -46,6 +48,9 @@ ig_path = BASE_DIR/"data"/"processed"/"ig_data.json"
 # persistent_db_path = BASE_DIR / "data" / "chroma_db"
 persistent_db_path = "C:/chroma_db"
 
+#Allowed moods
+raw_moods = os.getenv("MOODS", "")
+ALLOWED_MOODS = [m.strip() for m in raw_moods.split(",") if m.strip()]
 
 # ==========================================
 # 2. HELPER FUNCTIONS
@@ -159,7 +164,7 @@ def define_event_price_range(currency: str, price, usd_to_pen: float = 3.7):
     else:  # pen_price >= 300
         return "premium"
 
-def enrich_events_with_llm(events:list, llm_instance):
+def enrich_events_with_llm(events:list, llm_instance,moods:list):
     enriched = []
 
     for event in events:
@@ -173,12 +178,7 @@ def enrich_events_with_llm(events:list, llm_instance):
         #Add price range description
         event["precio_rango"] = define_event_price_range(moneda,precio)
 
-        ALLOWED_MOODS = ["romántico","energético","relajado","misterioso","divertido","cultural",
-            "artistico","nocturno","familiar","intenso","fiesta","educativo","fiestero","espontáneo",
-            "elegante","underground","deportivo","gastronómico","urbano","desconexión","aire-libre",
-            "natural","aventurero","foodie","casual","buen-ambiente","extremo","íntimo"]
-
-        prompt= build_event_classification(event,ALLOWED_MOODS)
+        prompt= build_event_classification(event,moods)
         
         response = llm_instance.invoke(prompt)
 
@@ -204,14 +204,13 @@ def enrich_events_with_llm(events:list, llm_instance):
 
     return enriched
 
-load_dotenv()
 
 llm = ChatOllama(os.environ.get("OLLAMA_API_KEY"))
 
 if not event_semantic_data:
     events_data = load_json_data(events_path)
     
-    events_with_moods = enrich_events_with_llm(events_data,llm)
+    events_with_moods = enrich_events_with_llm(events_data,llm,ALLOWED_MOODS)
 
     write_json_data(semantic_events_path,events_with_moods)
 
