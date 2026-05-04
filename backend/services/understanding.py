@@ -2,10 +2,18 @@
 LLM wrapper for returning a structured query.
 
 """
+#Standard modules
+import os
 
 #Local modules
 from rag.llm.prompt_templates import build_query
 
+#Third-party modules
+from dotenv import load_dotenv
+
+load_dotenv()
+raw_moods = os.getenv("MOODS","")
+ALLOWED_MOODS = [m.strip() for m in raw_moods.split(",") if m.strip()]
 
 class QueryUnderstandingService:
     def __init__(self,llm_client):
@@ -14,11 +22,6 @@ class QueryUnderstandingService:
     def parse(self, query: str) -> dict:
         # call LLM
         llm = self.llm_client
-
-        ALLOWED_MOODS = ["romántico","energético","relajado","misterioso","divertido","cultural",
-            "artistico","nocturno","familiar","intenso","fiesta","educativo","fiestero","espontáneo",
-            "elegante","underground","deportivo","gastronómico","urbano","desconexión","aire-libre",
-            "natural","aventurero","foodie","casual","buen-ambiente","extremo","íntimo"]
 
         prompt = build_query(query,ALLOWED_MOODS)
 
