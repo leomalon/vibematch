@@ -9,6 +9,7 @@ import {Home, SlidersHorizontal } from "lucide-react";
 export default function CategoriesLayout({ children }) {
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Extract slug from URL
   const pathname = usePathname();
@@ -18,7 +19,10 @@ export default function CategoriesLayout({ children }) {
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 850);
-    check();
+
+    check(); // detect immediately
+    setMounted(true); // mark ready
+
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
@@ -26,17 +30,21 @@ export default function CategoriesLayout({ children }) {
   const CATEGORIES = [
     "Arte-cultura",
     "Teatro",
-    "Restaurante",
-    "Bar",
-    "Rooftop",
     "Conciertos",
+    "Entretenimiento",
+    "Bar",
+    "Restaurante",
+    "Huarique",
+    "Heladería",
+    "Cafetería",
+    "Rooftop",
+    "Playa",
     "Hotel",
     "Deportes",
     "Viaje-aventura",
     "Paseo",
     "Ocio",
     "Fútbol",
-    "Entretenimiento",
     "Cursos-talleres",
     "Seminarios-Conferencias",
     "Stand-up"
@@ -128,6 +136,8 @@ export default function CategoriesLayout({ children }) {
       top: "80px",
     },
   };
+
+  if (!mounted) return null;
 
   return (
     <div style={styles.page}>
