@@ -11,6 +11,7 @@ export default function Home() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -53,25 +54,32 @@ export default function Home() {
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 850);
-    check(); // run once on mount
+
+    check(); // detect immediately
+    setMounted(true); // mark ready
+
     window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check); // cleanup
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   const CATEGORIES = [
     "Arte-cultura",
     "Teatro",
-    "Restaurante",
-    "Bar",
-    "Rooftop",
     "Conciertos",
+    "Entretenimiento",
+    "Bar",
+    "Restaurante",
+    "Huarique",
+    "Heladería",
+    "Cafetería",
+    "Rooftop",
+    "Playa",
     "Hotel",
     "Deportes",
     "Viaje-aventura",
     "Paseo",
     "Ocio",
     "Fútbol",
-    "Entretenimiento",
     "Cursos-talleres",
     "Seminarios-Conferencias",
     "Stand-up"
@@ -81,7 +89,7 @@ export default function Home() {
   const styles = {
     page: {
       position: "relative",
-      maxHeight: "100vh",
+      maxHeight: "100dvh",
       maxWidth:'100vw',
       color: "white",
       overflow:'hidden'
@@ -92,7 +100,7 @@ export default function Home() {
     top: 0,
     left: 0,
     maxWidth:'100vw',
-    height:'100vh',
+    height:'100dvh',
     width:'100vw',
     zIndex: 0,
     pointerEvents: "none",
@@ -102,7 +110,7 @@ export default function Home() {
   header: {
     position: "absolute",
     top: "20px",
-    zIndex: 2,
+    zIndex: 100,
     display:"flex",
     width:'100%',
     justifyContent:'space-between',
@@ -118,7 +126,7 @@ export default function Home() {
   // Mobile toggle button (top-right)
   mobileToggle: {
     marginRight:'15px',
-    zIndex: 101,
+    zIndex: 100,
     background: "rgba(255,255,255,0.1)",
     backdropFilter: "blur(10px)",
     border: "1px solid rgba(255,255,255,0.2)",
@@ -148,8 +156,7 @@ export default function Home() {
   // 🔥 Center container
  centerContainer: (hasSearched) => ({
     position: "fixed",
-    marginTop:"35vh",
-    marginTop: hasSearched ? "20px" : "35vh",
+    marginTop: hasSearched ? "70px" : "35vh",
     display: "flex",
     justifyContent: "center",
     width: "100%",
@@ -167,7 +174,7 @@ export default function Home() {
   // 🔥 Input styling
   input: {
     width: "100%",
-    padding: "14px 110px 14px 40px", // 👈 left padding added
+    padding: "14px 0px 14px 30px", // 👈 left padding added
     fontSize: "16px",
     borderRadius: "999px",
     border: "1px solid white",
@@ -187,7 +194,7 @@ export default function Home() {
     right: "5px",
     top: "50%",
     transform: "translateY(-50%)",
-    padding: "8px 16px",
+    padding: "8px 8px",
     borderRadius: "999px",
     border: "none",
     background: "white",
@@ -215,8 +222,8 @@ export default function Home() {
     zIndex: 2,
     padding: "2rem",
     maxWidth: "900px",
-    maxHeight:"80vh",
-    marginTop:"80px",
+    maxHeight:"80dvh",
+    marginTop:"135px",
     marginLeft: "auto",
     marginRight: "auto",
     overflowY: "auto",
@@ -325,152 +332,154 @@ export default function Home() {
   },
 };
 
-return (
-  <div style={styles.page}>
+  if (!mounted) return null;
 
-    {/* Background */}
-    <div style={styles.background}>
-      <ColorBends
-        colors={["#ff5c7a", "#8a5cff", "#00ffd1"]}
-        rotation={0}
-        speed={0.5}
-        scale={1}
-        frequency={1}
-        warpStrength={1}
-        mouseInfluence={1}
-        parallax={1}
-        noise={0.4}
-        transparent
-        autoRotate={1}
-      />
-    </div>
+  return (
+    <div style={styles.page}>
 
-    {/* Foreground UI */}
-    {/* Top bar */}
-    <div style={styles.header}>
-      <h1 style={styles.logo}>VibeMatch</h1>
-      <div style={{position: 'relative', display:'flex' }}>
-        {/* Home button */}
-      
-      {isMobile && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          style={styles.mobileToggle}
-        >
-          <SlidersHorizontal size={18} />
-        </button>)
-      }
-      
+      {/* Background */}
+      <div style={styles.background}>
+        <ColorBends
+          colors={["#ff5c7a", "#8a5cff", "#00ffd1"]}
+          rotation={0}
+          speed={0.5}
+          scale={1}
+          frequency={1}
+          warpStrength={1}
+          mouseInfluence={1}
+          parallax={1}
+          noise={0.4}
+          transparent
+          autoRotate={1}
+        />
       </div>
 
+      {/* Foreground UI */}
+      {/* Top bar */}
+      <div style={styles.header}>
+        <h1 style={styles.logo}>VibeMatch</h1>
+        <div style={{position: 'relative', display:'flex' }}>
+          {/* Home button */}
+        
+        {isMobile && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            style={styles.mobileToggle}
+          >
+            <SlidersHorizontal size={18} />
+          </button>)
+        }
+        
+        </div>
 
-    </div>
 
-    {/* Mobile overlay */}
-    {(isMobile && sidebarOpen) && (
-      <div style={styles.overlay} onClick={() => setSidebarOpen(false)} />
-  
-    )}
-  
-    {/* Mobile sidebar */}
-    {(isMobile && sidebarOpen) && (
-      
-      <div className="sidebar-scroll">
+      </div>
+
+      {/* Mobile overlay */}
+      {(isMobile && sidebarOpen) && (
+        <div style={styles.overlay} onClick={() => setSidebarOpen(false)} />
+    
+      )}
+    
+      {/* Mobile sidebar */}
+      {(isMobile && sidebarOpen) && (
+        
+        <div className="sidebar-scroll">
+            <CategorySidebar
+              CATEGORIES={CATEGORIES}
+              isMobile={isMobile}
+              selected={selectedCategory}
+              isOpen={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+            />
+        </div>)
+      }
+
+
+      {/* Desktop sidebar */}
+      {!isMobile && 
+        (<div style={styles.desktopContainer} className="sidebar-scroll">
           <CategorySidebar
             CATEGORIES={CATEGORIES}
             isMobile={isMobile}
             selected={selectedCategory}
-            isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
+            isOpen={true}
+            onClose={() => {}}
           />
-      </div>)
-    }
+        </div>)
+      }
 
 
-    {/* Desktop sidebar */}
-    {!isMobile && 
-      (<div style={styles.desktopContainer} className="sidebar-scroll">
-        <CategorySidebar
-          CATEGORIES={CATEGORIES}
-          isMobile={isMobile}
-          selected={selectedCategory}
-          isOpen={true}
-          onClose={() => {}}
-        />
-      </div>)
-    }
+      {/* Centered search */}
+      <div style={styles.centerContainer(hasSearched)}>
+        <div style={styles.inputWrapper}>
+          <input
+            type="text"
+            placeholder="Describe el plan que quieres..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && searchEvents()}
+            style={styles.input}
+          />
 
-
-    {/* Centered search */}
-    <div style={styles.centerContainer(hasSearched)}>
-      <div style={styles.inputWrapper}>
-        <input
-          type="text"
-          placeholder="Describe el plan que quieres..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && searchEvents()}
-          style={styles.input}
-        />
-
-        <button onClick={searchEvents} style={styles.innerButton}>
-          <Search size={18} />
-        </button>
-
-        {query && (
-          <button onClick={resetSearch} style={styles.resetButton}>
-            ✕
+          <button onClick={searchEvents} style={styles.innerButton}>
+            <Search size={18} />
           </button>
-        )}
-      </div>
-    </div>
 
-    {/* Results */}
-    <main style={styles.resultsContainer} className="sidebar-scroll">
-      {loading && (
-        <div style={styles.loaderContainer}>
-          <div style={styles.spinner}></div>
-          <p style={styles.loaderText}>Cargando...</p>
+          {query && (
+            <button onClick={resetSearch} style={styles.resetButton}>
+              ✕
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Results */}
+      <main style={styles.resultsContainer} className="sidebar-scroll">
+        {loading && (
+          <div style={styles.loaderContainer}>
+            <div style={styles.spinner}></div>
+            <p style={styles.loaderText}>Cargando...</p>
+          </div>
+        )}
+
+      {!loading && hasSearched && events.length === 0 && (
+        <p>Lo sentimos, no se han encontrado resultados...</p>
       )}
 
-    {!loading && hasSearched && events.length === 0 && (
-      <p>Lo sentimos, no se han encontrado resultados...</p>
-    )}
+      <div style={styles.grid}>
+        {events.map((event, index) => (
+          <div key={index} style={styles.card}>
+          {/* Top row: Title + action */}
+          <div style={styles.cardHeader}>
+            <h3 style={styles.title}>{capitalizeFirst(event.titulo)}</h3>
 
-    <div style={styles.grid}>
-      {events.map((event, index) => (
-        <div key={index} style={styles.card}>
-        {/* Top row: Title + action */}
-        <div style={styles.cardHeader}>
-          <h3 style={styles.title}>{capitalizeFirst(event.titulo)}</h3>
+            <a href={event.url} target="_blank" rel="noopener noreferrer">
+              <button style={styles.iconButton}>
+                <ExternalLink size={18} />
+              </button>
+            </a>
+          </div>
 
-          <a href={event.url} target="_blank" rel="noopener noreferrer">
-            <button style={styles.iconButton}>
-              <ExternalLink size={18} />
-            </button>
-          </a>
+          {/* Description */}
+          <p style={styles.description}>{event.descripcion}</p>
+
+          {/* Footer: category + price */}
+          <div style={styles.footer}>
+            <span style={styles.category}>{event.categoria}</span>
+
+            <span style={styles.price}>
+              {event.precio} {event.moneda}
+            </span>
+          </div>
         </div>
-
-        {/* Description */}
-        <p style={styles.description}>{event.descripcion}</p>
-
-        {/* Footer: category + price */}
-        <div style={styles.footer}>
-          <span style={styles.category}>{event.categoria}</span>
-
-          <span style={styles.price}>
-            {event.precio} {event.moneda}
-          </span>
-        </div>
-      </div>
-          ))}
-        </div>
-    </main>
+            ))}
+          </div>
+      </main>
 
 
 
-  </div>
+    </div>
 
-);
+  );
 }
