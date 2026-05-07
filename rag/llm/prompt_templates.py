@@ -60,6 +60,7 @@ class PromptTemplates:
                     RESTRICCIÓN IMPORTANTE:
                     - El mood "íntimo" SOLO puede usarse cuando se activa la REGLA PRIORITARIA (intención sexual explícita).
                     - NO usar "íntimo" para citas románticas normales, salidas en pareja o contextos románticos generales.
+                    - La categoría "hotel" solo puede usarse cuando se active la regla prioritaria.
                     - Para citas románticas estándar, usar únicamente "romántico" u otros moods apropiados.
 
                     REGLA PRIORITARIA (CRÍTICA):
@@ -70,8 +71,6 @@ class PromptTemplates:
                             Categoría: hotel
                         - Ignora cualquier otra inferencia
                         - Continúa completando ubicación normalmente
-                    - Si el input del usuario contiene la jerga "tragos", "chelas", "shots" y "traguitos" coloca una de las siguientes categorías ("bar", "restaurante" o "rooftop").
-                    Si no es explícito con la categoría de establecimiento asume la categoría "bar".
 
                     REGLAS GENERALES:
                     - Selecciona entre 2 y 4 moods como máximo.
@@ -79,6 +78,8 @@ class PromptTemplates:
                     - Si el usuario no menciona moods explícitos, infiere los más probables según el contexto.
                     - No inventes moods fuera de la lista.
                     - Las barras libres entran en la categoría de establecimiento de comidas o bebidas.
+                    - Si el input del usuario contiene la jerga "tragos", "chelas", "shots" y "traguitos" coloca una de las siguientes categorías ("bar", "restaurante" o "rooftop").
+                    Si no es explícito con la categoría de establecimiento asume la categoría "bar".
                     - Si al indicar barra libre especifican un tipo de comida entonces asigna un establecimiento de comida como "restaurante", "huarique", "heladería" o "rooftop".
                     Si no explícito con el lugar entonces coloca por defecto "restaurante".
 
@@ -135,10 +136,12 @@ class PromptTemplates:
         - Si en la descripción el tipo de comida es específico haz caso a eso.
         - Ten en cuenta la categoría del establecimiento o evento que se indica.
 
+        RESTRICCIÓN IMPORTANTE:
+        - Si en la descripción del usuario no está explícitamente una intención de actividad sexual (por ejemplo: "sex", "tener sexo", "tener relaciones sexuales", "noche íntima", "detonar")
+          no puedes recomendar un evento con la categoría "hotel".
+
         REGLA PRIORITARIA:
-        - Si en la descripción brindada por el usuario está:
-            Moods: romantico, intimo
-            Categoría: hotel
+        - Si la descripción brindada por el usuario contiene intención explícita de actividad sexual (por ejemplo: "sex", "tener sexo", "tener relaciones sexuales", "noche íntima", "detonar").
         - Entonces:
             - SOLO selecciona eventos cuya categoría sea "hotel"
             - Prioriza eventos que impliquen privacidad, pareja o ambiente íntimo
