@@ -43,15 +43,18 @@ class PromptTemplates:
             """
 
     QUERY_TRANSFORMATION="""
-                    Analiza la intención del usuario y conviértela en un query estructurado.
+                    Identifica las emociones (moods) que la persona quiere sentir, identifica la categoría del evento o establecimiento,
+                    genera un resumen breve del evento y que sensación daría, además identifica el público objetivo al que va dirigido.
 
                     Debes extraer:
                     1. mood (emociones deseadas)
-                    2. publico_objetivo (familia, amigos, amigas, enamorada, enamorado, etc.)
-                    3. categoria (categoría de evento)
-                    4. ubicación (ciudad)
+                    2. tags (palabras claves que encuentres)
+                    3. descripción (breve resumen)
+                    4. publico_objetivo (familia, amigos, amigas, enamorada, enamorado, etc.)
+                    5. categoria (puede ser un tipo de evento, actividad o establecimiento)
+                    6. ubicación (ciudad)
 
-                    Moods permitidos:
+                    Emociones permitidas:
                     {allowed_moods}
 
                     RESTRICCIÓN IMPORTANTE:
@@ -67,18 +70,29 @@ class PromptTemplates:
                             Categoría: hotel
                         - Ignora cualquier otra inferencia
                         - Continúa completando ubicación normalmente
+                    - Si el input del usuario contiene la jerga "tragos", "chelas", "shots" y "traguitos" coloca una de las siguientes categorías ("bar", "restaurante" o "rooftop").
+                    Si no es explícito con la categoría de establecimiento asume la categoría "bar".
 
                     REGLAS GENERALES:
-                    - Selecciona entre 1 y 3 moods como máximo.
+                    - Selecciona entre 2 y 4 moods como máximo.
                     - Usa exactamente los valores en minúsculas como aparecen en la lista.
                     - Si el usuario no menciona moods explícitos, infiere los más probables según el contexto.
                     - No inventes moods fuera de la lista.
+                    - Las barras libres entran en la categoría de establecimiento de comidas o bebidas.
+                    - Si al indicar barra libre especifican un tipo de comida entonces asigna un establecimiento de comida como "restaurante", "huarique", "heladería" o "rooftop".
+                    Si no explícito con el lugar entonces coloca por defecto "restaurante".
 
                     - publico_objetivo debe ser una descripción corta (ej: "parejas", "amigos", "familia", "solo").
                     - Si no es claro, infiere el más probable.
 
-                    - categoria debe ser un tipo de evento o establecimiento (ej: "teatro", "concierto", "fiesta", "gastronomía", "cultural","comedia","restaurante", "bar","rooftop", etc.).
-                    - DEBES inferir una categoría probable basada en el contexto del usuario.
+                    - Para generar la descripción enfócate en el tipo de evento, establecimiento, ambiente y experiencia y genera un resumen claro
+
+                    - La categoria puede ser un tipo de evento (ej: "arte-cultura","teatro","concierto","entretenimiento",
+                    "deportes","viaje-aventura","paseo","ocio","fútbol","cursos-talleres","seminarios-conferencias","stand-up")
+                    - La categoria puede ser un establecimiento de comida o bebidas ("bar","restaurante","huarique","heladería","cafetería","rooftop")
+                    - La categoría puede ser un establcimiento general ("hotel")
+                    - La categoria puede ser una ubicación ("playa")
+                    - DEBES inferir una categoría probable basada en la acción principal de la descripción del usuario. 
                     - SOLO devuelve null si no existe absolutamente ninguna pista en el input.
                     - Si no encuentras la ubicación entonces asume que es de la ciudad de Lima
 
@@ -96,6 +110,8 @@ class PromptTemplates:
 
                     Público objetivo: pareja, amigos, familia, etc.
 
+                    Descripción: Descripción breve del plan del usuario
+
                     Categoría: valor
 
                     Ubicación: ciudad
@@ -105,20 +121,22 @@ class PromptTemplates:
                     "{user_query}"
                     """
 
-    RECOMMENDATION_PROMPT = """"
-        Eres un sistema experto en recomendación de eventos basado en la intención del usuario.
+    RECOMMENDATION_PROMPT = """
+        Eres un sistema experto en recomendación de eventos y establecimientos basado en la intención del usuario.
 
         OBJETIVO:
-        Seleccionar únicamente los eventos del contexto que mejor coincidan con la solicitud del usuario.
+        Seleccionar únicamente los eventos o establecimientos del contexto que mejor coincidan con la solicitud del usuario.
 
 
         FUENTE DE VERDAD:
-        - Debes basarte PRINCIPALMENTE en el query estructurado proporcionado.
-        - NO reinterpretar el lenguaje original del usuario.
+        - Debes basarte PRINCIPALMENTE en la descripción brindada por el usuario.
+        - NO reinterpretar la descripción brindada por el usuario.
         - Usa los campos (moods, categoría, público objetivo) como criterios de filtrado.
+        - Si en la descripción el tipo de comida es específico haz caso a eso.
+        - Ten en cuenta la categoría del establecimiento o evento que se indica.
 
         REGLA PRIORITARIA:
-        - Si el query estructurado contiene:
+        - Si en la descripción brindada por el usuario está:
             Moods: romantico, intimo
             Categoría: hotel
         - Entonces:
@@ -138,37 +156,30 @@ class PromptTemplates:
         - NO incluyas texto adicional.
         - NO incluyas explicaciones.
         - El JSON debe ser una lista de objetos.
+        - NO uses markdown.
+        - NO uses ```json.
+        - NO agregues comentarios.
+        - La respuesta debe comenzar con [ y terminar con ].
 
 
-        Ejemplo de respuesta:
-        '
+        FORMATO DE RESPUESTA OBLIGATORIO:
+
         [
-            {{
-                "titulo": "string",
-                "descripcion":"string",
-                "url": "string",
-                "direccion":"string",
-                "categoria": "string",
-                "precio": 0,
-                "moneda": "string"
-            }},
-            {{
-                "titulo": "string",
-                "descripcion":"string",
-                "url": "string",
-                "direccion":"string",
-                "categoria": "string",
-                "precio": 0,
-                "moneda": "string"
-            }},
-            ...
+        {{
+            "titulo": "string",
+            "descripcion": "string",
+            "url": "string",
+            "direccion": "string",
+            "categoria": "string",
+            "precio": 0,
+            "moneda": "string"
+        }}
         ]
-        '
 
         Contexto:
         {context_for_llm}
 
-        Evento que quiere el usuario:
+        Descripción brindada por el usuario:
         {query_transformed}
 
         """
