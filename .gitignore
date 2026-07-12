@@ -4,6 +4,7 @@
 # Data (CRITICAL)
 backend/scraper_data/
 backend/scraper_config/
+backend/data/
 
 # Python artifacts
 __pycache__/
