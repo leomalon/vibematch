@@ -2,7 +2,8 @@
 .env
 
 # Data (CRITICAL)
-data/
+backend/scraper_data/
+backend/scraper_config/
 
 # Python artifacts
 __pycache__/
