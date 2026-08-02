@@ -8,50 +8,31 @@ HTTP request/response and validation (via Pydantic)
 """
 
 #Standard modules
-import os
 from pathlib import Path
 import json
 
 #Third-party modules
-from fastapi import APIRouter
-from dotenv import load_dotenv
+from fastapi import APIRouter,Depends
+from sqlalchemy.orm import Session
 import unicodedata
+from dotenv import load_dotenv
 
-#Local modules
-from backend.schemas.event import QueryRequest, EventResponse
-from backend.services.retrieval import RetrievalService
-from backend.services.understanding import QueryUnderstandingService
-from backend.services.response_filter import ResponseFilterService
+#Schemas
+from backend.schemas.request import SearchRequest
+from backend.schemas.response import SearchResponse
 
-from rag.retrieval.query_pipeline import vector_db
+#DB Dependencies
+from backend.db.session import get_db
 
-#Llm clients
-from rag.llm.openai import ChatOpenAI
-
-
+#Service dependencies
+from backend.core.container import search_service
 
 # ==========================================
-# 1. CONFIG VARIABLES
+# 1. CONFIG
 # ==========================================
-load_dotenv()
-
-openai_api_key = os.environ.get("OPENAI_API_KEY")
-
-llm_client = ChatOpenAI(api_key=openai_api_key,model="gpt-4.1-mini")
 
 router = APIRouter()
 
-query_understanding_service = QueryUnderstandingService(llm_client)
-response_filter_service = ResponseFilterService(llm_client)
-retrieval_service = RetrievalService(vectorstore=vector_db)
-
-#Events
-
-# Always resolve from root
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
-#Config paths
-data_path  = BASE_DIR / "data" / "processed"/"semantic_events.json"
 
 # ==========================================
 # 2. HELPER FUNCTIONS
@@ -79,54 +60,40 @@ def normalize_text(text: str) -> str:
 # ==========================================
 # 3. ENDPOINTS
 # ==========================================
-@router.post("/search", response_model=list[EventResponse])
-def search_events(request: QueryRequest):
-    structured_query = query_understanding_service.parse(request.query)
-    print(structured_query)
-    results = retrieval_service.search_top_n(structured_query,"vibe_collection",12,8)
+@router.post("/search", response_model=list[SearchResponse])
+def search_events(request: SearchRequest,db: Session = Depends(get_db)):
 
-    parsed_results = results
+    return search_service.search(request.query,db)
 
-    parsed_results = [
-        {
-            "titulo": event.get("titulo"),
-            "descripcion": event.get("descripcion"),
-            "url": event.get("url"),
-            "direccion": event.get("direccion"),
-            "precio": event.get("precio"),
-            "moneda": event.get("moneda"),
-            "categoria": event.get("categoria"),
-            "tags": event.get("tags"),
-        }
-        for event in results
-    ]
 
-    filtered_events=response_filter_service.json_response(str(parsed_results),request.query)
+@router.post("/rag_search", response_model=list[SearchResponse])
+def rag_search(request: SearchRequest):
 
-    return filtered_events
+    return search_service.rag_search(request.query,"vibematch_collection",10)
 
-@router.get("/categories/{category}")
-def get_events_by_category(category: str):
+
+# @router.get("/categories/{category}")
+# def get_events_by_category(category: str):
     
-    events = load_json_data(data_path)
+#     events = load_json_data(data_path)
     
-    results = []
+#     results = []
 
-    for event in events:
+#     for event in events:
             
-        # normalize both sides
-        event_cat = normalize_text(event["categoria_espaniol"])
+#         # normalize both sides
+#         event_cat = normalize_text(event["categoria_espaniol"])
 
-        if event_cat == category:
-            results.append({
-                    "categoria": event["categoria_espaniol"],
-                    "url": event["url_evento"],
-                    "titulo": event["titulo"],
-                    "descripcion": event["descripcion"],
-                    "precio": event["precio"],
-                    "moneda": event["moneda"],
-                    "mood": event["mood"],
-                    "tags":event["tags"]
-                })
+#         if event_cat == category:
+#             results.append({
+#                     "categoria": event["categoria_espaniol"],
+#                     "url": event["url_evento"],
+#                     "titulo": event["titulo"],
+#                     "descripcion": event["descripcion"],
+#                     "precio": event["precio"],
+#                     "moneda": event["moneda"],
+#                     "mood": event["mood"],
+#                     "tags":event["tags"]
+#                 })
 
-    return results
+#     return results

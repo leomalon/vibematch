@@ -5,7 +5,7 @@ API Schema for query and response.
 
 from pydantic import BaseModel
 
-class EventResponse(BaseModel):
+class SearchResponse(BaseModel):
     titulo: str
     descripcion:str
     url: str
@@ -13,7 +13,3 @@ class EventResponse(BaseModel):
     categoria: str
     precio: float | None
     moneda: str
-
-
-class QueryRequest(BaseModel):
-    query: str
