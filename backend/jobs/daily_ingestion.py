@@ -1,6 +1,15 @@
 """
 daily_ingestion.py
 
+Daily job:
+
+1. (Optional) scrapes Joinnus and EntradaLibre into their raw event files.
+2. Loads the event sets (Joinnus + EntradaLibre + curated points).
+3. Enriches events with semantic metadata (moods, tags, publico) via LLM.
+4. Persists the combined set to a single JSON file (semantic_experiences.json).
+5. Writes every event into PostgreSQL.
+
+Run offline by leaving RUN_SCRAPING=False: it uses the already scraped files.
 """
 #Standard modules
 from pathlib import Path
@@ -8,9 +17,8 @@ import os
 
 #Services
 from backend.services.ingestion_service import IngestionService
-from backend.ingestion.embeddings.embeddings_service import get_openai_embedding
 
-#Repositories
+#DB
 from backend.db.session import SessionLocal
 from backend.repositories.catalog_repository import CatalogRepository
 
@@ -24,134 +32,123 @@ from backend.llm.ollama_client import ChatOllama
 #Processors
 from backend.ingestion.processors.semantic_enrichment import SemanticEnrichmentProcessor
 
-#Writers
+#Writers / storage
 from backend.ingestion.storage.postgres_writer import PostgresWriter
-from backend.ingestion.storage.chroma_repository import ChromaVectorStore
 from backend.ingestion.raw.json_storage import JsonStorage
 
 #Pipelines
 from backend.ingestion.pipelines.postgres_pipeline import PostgresPipeline
-from backend.ingestion.pipelines.chroma_pipeline import ChromaPipeline
 
 
 # ==========================================
 # 1. CONFIG PATHS
 # ==========================================
 
-# Always resolve from root
+# backend/ (daily_ingestion.py lives at backend/jobs/)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 #Web page entries
 web_config_path = BASE_DIR / "config" / "sites.json"
 
 #Categories
-joinnus_categories = BASE_DIR / "config" / "joinnus_categories.json"
-entradalibre_categories = BASE_DIR / "config" / "entradalibre_categories.json"
+joinnus_categories_path = BASE_DIR / "config" / "joinnus_categories.json"
+entradalibre_categories_path = BASE_DIR / "config" / "entradalibre_categories.json"
 
 #Raw data paths
-joinnus_raw_path = BASE_DIR/"data"/"raw"/"joinnus_raw.json"
-entradalibre_raw_path = BASE_DIR/"data"/"raw"/"entradalibre_raw.json"
+joinnus_raw_path = BASE_DIR / "data" / "raw" / "joinnus_raw.json"
+entradalibre_raw_path = BASE_DIR / "data" / "raw" / "entradalibre_raw.json"
 
 #Raw events data paths
-joinnus_events_raw_path = BASE_DIR/"data"/"raw"/"joinnus_events_raw.json"
-entradalibre_events_raw_path = BASE_DIR/"data"/"raw"/"entradalibre_events_raw.json"
+joinnus_events_raw_path = BASE_DIR / "data" / "raw" / "joinnus_events_raw.json"
+entradalibre_events_raw_path = BASE_DIR / "data" / "raw" / "entradalibre_events_raw.json"
 
-#Semantic events data paths
-events_with_moods_path = BASE_DIR / "data" / "processed" / "events_with_moods.json"
-ig_places_path = BASE_DIR/"data"/"processed"/"ig_places.json"
+#Curated points (restaurants, bars, etc.) - already semantically enriched
+points_path = BASE_DIR / "data" / "processed" / "point_experiences.json"
 
-#Vector DB path
-# persistent_db_path = BASE_DIR / "data" / "chroma_db"
-persistent_db_path = "C:/chroma_db"
+#Single combined semantic file
+semantic_events_path = BASE_DIR / "data" / "processed" / "semantic_experiences.json"
 
-# ==========================================
-# 2. SCRAPING VARIABLES
-# ==========================================
-
-json_storage = JsonStorage()
-
-# Web pages
-sites = json_storage.load(web_config_path)[0]
-
-#Joinnus
-joinnus_origin = sites["joinnus"]["origin"]
-joinnus_categories = json_storage.load(joinnus_categories)
-joinnus_tag_data = sites["joinnus"]["id_tag_data"]
-joinnus_static_data = sites["joinnus"]["static_tag_data"]
-
-#EntradaLibre
-entradalibre_origin = sites["entradalibre"]["origin"]
-entradalibre_parameters = sites["entradalibre"]
-entradalibre_categories = json_storage.load(entradalibre_categories)
-print(entradalibre_parameters)
-
-# ==========================================
-# 2. DEPENDENCIES
-# ==========================================
-
-#---LLMS---
-llm_enrichment = ChatOllama(os.environ.get("OLLAMA_API_KEY"))
-
-#---MOODS EXTRACTION---
-db = SessionLocal()
-try:
-    catalog_repo = CatalogRepository(db)
-
-    moods = catalog_repo.get_all_moods()
-
-    moods = [mood["nombre"] for mood in moods]
-
-finally:
-    db.close()
-
-#---SCRAPERS---
-joinnus_scraper = JoinnusScraper(origin=joinnus_origin,categories=joinnus_categories,
-                                 id_tag=joinnus_tag_data,static_tag=joinnus_static_data)
-
-entradalibre_scraper = EntradaLibreScraper(origin=joinnus_origin,web_parameters = entradalibre_parameters,web_categories=entradalibre_categories)
-
-# entradalibre_scraper = EntradaLibreScraper()
-
-
-#---PIPELINES---
-postgres_pipeline = PostgresPipeline(
-            processors = [SemanticEnrichmentProcessor(llm_enrichment,moods)],
-            processed_storage=json_storage,
-            writer=PostgresWriter(),
-            semantic_events_path = events_with_moods_path
-        )
-
-# chroma_pipeline = ChromaPipeline(
-#     processors=[SemanticEnrichmentProcessor(llm_enrichment,moods)],
-#     processed_storage=json_storage,
-#     writer = ChromaVectorStore(persistent_db_path,get_openai_embedding("text-embedding-3-large")),
-#     semantic_events_path=events_with_moods_path,
-#     collection_name="vibematch_collection"
-# )
+#Scraping requires network + Playwright; keep False to work offline.
+RUN_SCRAPING = False
 
 
 # ==========================================
-# 3. MAIN EXECUTION
+# 2. MAIN EXECUTION
 # ==========================================
 
-def main():
+def _scrape_sources(json_storage: JsonStorage):
     service = IngestionService()
 
-    # service.ingest(
-    #     source=joinnus_scraper,
-    #     raw_storage=json_storage,
-    #     raw_data_path=joinnus_raw_path,
-    #     events_data_path=joinnus_events_raw_path,
-    #     pipeline=postgres_pipeline
-    # )
+    sites = json_storage.load(web_config_path)[0]
+
+    #---JOINNUS---
+    joinnus_categories = json_storage.load(joinnus_categories_path)
+    joinnus_scraper = JoinnusScraper(
+        origin=sites["joinnus"]["origin"],
+        categories=joinnus_categories,
+        id_tag=sites["joinnus"]["id_tag_data"],
+        static_tag=sites["joinnus"]["static_tag_data"],
+    )
+    service.ingest(
+        source=joinnus_scraper,
+        raw_storage=json_storage,
+        raw_data_path=joinnus_raw_path,
+        events_data_path=joinnus_events_raw_path,
+    )
+
+    #---ENTRADALIBRE---
+    entradalibre_categories = json_storage.load(entradalibre_categories_path)
+    entradalibre_scraper = EntradaLibreScraper(
+        origin=sites["entradalibre"]["origin"],
+        web_parameters=sites["entradalibre"],
+        web_categories=entradalibre_categories,
+    )
     service.ingest(
         source=entradalibre_scraper,
         raw_storage=json_storage,
         raw_data_path=entradalibre_raw_path,
         events_data_path=entradalibre_events_raw_path,
-        pipeline=postgres_pipeline
     )
 
-if __name__ == "__main__":
 
+def main():
+    json_storage = JsonStorage()
+
+    # Optional scraping (network + Playwright).
+    if RUN_SCRAPING:
+        _scrape_sources(json_storage)
+
+    db = SessionLocal()
+    try:
+        catalog_repo = CatalogRepository(db)
+
+        moods = [mood["nombre"] for mood in catalog_repo.get_all_moods()]
+        companias = [compania["nombre"] for compania in catalog_repo.get_all_companions()]
+
+        # LLM enrichment (requires OLLAMA_API_KEY).
+        llm_enrichment = ChatOllama(os.environ.get("OLLAMA_API_KEY"))
+
+        pipeline = PostgresPipeline(
+            processors=[SemanticEnrichmentProcessor(llm_enrichment, moods, companias)],
+            processed_storage=json_storage,
+            writer=PostgresWriter(db),
+            semantic_events_path=semantic_events_path,
+        )
+
+        joinnus_events = json_storage.load(joinnus_events_raw_path)
+        entradalibre_events = json_storage.load(entradalibre_events_raw_path)
+        points = json_storage.load(points_path)
+
+        all_events = joinnus_events + entradalibre_events + points
+
+        print(f"[daily_ingestion] {len(joinnus_events)} joinnus, "
+              f"{len(entradalibre_events)} entradalibre, {len(points)} points")
+
+        pipeline.run(all_events)
+
+    finally:
+        db.close()
+
+
+if __name__ == "__main__":
     main()

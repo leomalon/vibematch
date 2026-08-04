@@ -20,8 +20,8 @@ def format_event_for_embedding(event: dict) -> str:
 
     Tags clave: {", ".join([tag.replace("#", "") for tag in event['tags']])}
 
-    Público objetivo: 
-    {event["público"]}
+    Público objetivo:
+    {event["publico"]}
 
     Descripción corta:
     {event['descripcion']}

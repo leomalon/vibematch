@@ -23,13 +23,16 @@ class JsonStorage():
 
         return json.loads(content)
 
-    def save(self,json_path:str|Path,raw_data:str|list|dict):
-        try:
-            current_data = self.load(json_path) or []
-        except:
-            current_data = []
+    def save(self,json_path:str|Path,raw_data:str|list|dict,overwrite:bool=False):
+        if overwrite:
+            current_data = list(raw_data) if isinstance(raw_data, list) else raw_data
+        else:
+            try:
+                current_data = self.load(json_path) or []
+            except:
+                current_data = []
 
-        current_data.extend(raw_data)
+            current_data.extend(raw_data)
 
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(current_data, f, ensure_ascii=False, indent=4)

@@ -1,11 +1,14 @@
 """
 postgres_pipeline.py
 
-Adds semantic moods to the events, stores the events in json and 
-write the events to the database.
+Orchestrates the Postgres ingestion workflow:
 
-Pipeline orchestrates a technical processing workflow (implementation workflow)
+1. Enrich events with semantic metadata (moods, tags, publico).
+2. Persist the full set to a single JSON file (semantic_experiences.json).
+3. Write every event to the PostgreSQL database.
 
+The pipeline receives ALL events (Joinnus + EntradaLibre + curated points);
+the semantic processor skips events that are already enriched.
 """
 
 # ==========================================
@@ -29,4 +32,15 @@ class PostgresPipeline:
 
     def run(self, events):
 
-        print(events)
+        for processor in self.processors:
+            events = processor.process(events)
+
+        # Persist the combined, enriched set to the single semantic file.
+        self.processed_storage.save(
+            self.semantic_events_path,
+            events,
+            overwrite=True,
+        )
+
+        # Write each event into PostgreSQL.
+        self.writer.save(events)

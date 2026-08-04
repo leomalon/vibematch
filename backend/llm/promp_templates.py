@@ -7,14 +7,17 @@ import json
 
 class PromptTemplates:
     EVENT_ENRICHMENT = """
-            Clasifica el evento en emociones (moods) y genera un resumen breve del evento y que sensación daría, 
-            además identifica el público objetivo al que va dirigido.
+            Clasifica el evento: identifica las emociones (moods) que transmite,
+            genera un resumen breve, determina el público objetivo y extrae tags clave.
 
             Emociones permitidas:
             {allowed_moods}
 
+            Público permitido (usa SOLO estos valores, puede ser más de uno):
+            {allowed_companias}
+
             Reglas:
-            - Selecciona solo entre 2 y 4 emociones.
+            - Selecciona entre 2 y 4 emociones.
             - Usa exactamente los valores en minúsculas como aparecen en la lista.
             - No repitas emociones.
             - Solo utiliza la lista de emociones permitida.
@@ -25,8 +28,14 @@ class PromptTemplates:
             - Elimina lenguaje promocional o redundante.
             - Enfócate en el tipo de evento, ambiente y experiencia.
 
-            Público: 
-            - Identifica claramente el público al que va dirigido: familia, amigos, amigas, enamorada, enamorado, etc.
+            Público:
+            - Identifica claramente el público al que va dirigido.
+            - Selecciona SOLO valores de la lista de público permitido (puede ser más de uno).
+
+            Tags:
+            - Extrae entre 3 y 6 tags clave del evento (palabras o frases cortas, sin "#").
+            - Si el evento ya trae tags, úsalos o complétalos.
+            - Deben ser conceptos concretos (karting, sushi, tributo, paintball, etc.).
 
             Salida:
             - Responde SOLO en JSON válido, sin texto adicional.
@@ -34,14 +43,15 @@ class PromptTemplates:
             {{
             "emociones": ["emocion1","emocion2"],
             "resumen": "texto breve aquí",
-            "publico": "público al que apunta"
+            "publico": ["publico1","publico2"],
+            "tags": ["tag1","tag2"]
             }}
 
             Evento:
             Titulo: {titulo}
             Descripción: {descripcion}
             Categoría: {categoria}
-            Tags: {tags}
+            Tags existentes: {tags}
             """
 
     JSON_BUILDER_PROMPT = """
@@ -432,9 +442,14 @@ class PromptTemplates:
 
         """
 
-def build_event_classification(event: dict, allowed_moods: list[str]) -> str:
+def build_event_classification(
+    event: dict,
+    allowed_moods: list[str],
+    allowed_companias: list[str] | None = None,
+) -> str:
     return PromptTemplates.EVENT_ENRICHMENT.format(
         allowed_moods=", ".join(allowed_moods),
+        allowed_companias=", ".join(allowed_companias or []),
         titulo=event.get("titulo", ""),
         descripcion=event.get("descripcion", ""),
         categoria=event.get("categoria_espaniol", ""),

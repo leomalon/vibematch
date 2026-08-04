@@ -6,7 +6,7 @@ LLM wrapper for response filter.
 #Standard module
 import json
 
-from proyectos_portafolio.VibeMatch.backend.rag.llm.prompt_templates import build_recommendation_query
+from backend.llm.promp_templates import build_recommendation_query
 
 class ResponseFilterService:
 

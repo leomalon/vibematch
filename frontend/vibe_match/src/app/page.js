@@ -1,344 +1,114 @@
 "use client";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Search, List, Map } from "lucide-react";
+import CategoryDropdown from "@/Components/features/CategoryDropdown";
+import DateFilter from "@/Components/features/DateFilter";
+import PriceFilter from "@/Components/features/PriceFilter";
+import EventCard from "@/Components/features/EventCard";
+import SearchChip from "@/Components/features/SearchChip";
+import MapView from "@/Components/features/MapView";
+import ColorBends from "@/Components/ui/Background";
+import "./page.css";
 
-import { useState,useEffect } from "react";
-import ColorBends from '@/Components/ui/Background';
-import { ExternalLink,Search,SlidersHorizontal } from "lucide-react";
-import CategorySidebar from "@/Components/features/SideBar";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+function buildListUrl({ category, dateFilter, priceMax }) {
+  const params = new URLSearchParams();
+  if (category) params.set("categoria", category);
+  if (dateFilter) params.set("fecha", dateFilter);
+  if (priceMax !== undefined && priceMax !== null) params.set("precio_max", String(priceMax));
+  return `${API_URL}/events/list?${params.toString()}`;
+}
 
 export default function Home() {
-  const [query, setQuery] = useState("");
   const [events, setEvents] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState(null);
+  const [dateFilter, setDateFilter] = useState("hoy");
+  const [priceFilter, setPriceFilter] = useState("gratis");
+  const [priceMax, setPriceMax] = useState(0);
+  const [displayMode, setDisplayMode] = useState("list");
   const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const cardsRef = useRef(null);
 
-  const resetSearch = () => {
-    setQuery("");
-    setEvents([]);
-    setHasSearched(false);
-  };
-
-  const searchEvents = async () => {
-    if (!query) return;
-
-    setHasSearched(true);
+  const fetchEvents = useCallback(async () => {
     setLoading(true);
-    setEvents([]);
-
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/search`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query }),
-      });
-
+      const url = buildListUrl({ category, dateFilter, priceMax });
+      const res = await fetch(url);
       const data = await res.json();
       setEvents(data);
-    } catch (error) {
-      console.error("Error fetching events:", error);
+    } catch (err) {
+      console.error("Error fetching events:", err);
     } finally {
       setLoading(false);
     }
-  };
-  
-  const capitalizeFirst = (text) => {
-  if (!text) return "";
-  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-  };
+  }, [category, dateFilter, priceMax]);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 850);
+    if (!searching) fetchEvents();
+  }, [fetchEvents, searching]);
 
-    check(); // detect immediately
-    setMounted(true); // mark ready
+  async function handleSearch() {
+    if (!query.trim()) return;
+    setSearching(true);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/events/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: query.trim() }),
+      });
+      const data = await res.json();
+      setSearchResults(data);
+    } catch (err) {
+      console.error("Search error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+  function clearSearch() {
+    setQuery("");
+    setSearchResults([]);
+    setSearching(false);
+  }
 
-  const CATEGORIES = [
-    "Arte-cultura",
-    "Teatro",
-    "Conciertos",
-    "Entretenimiento",
-    "Bar",
-    "Restaurante",
-    "Huarique",
-    "Heladería",
-    "Cafetería",
-    "Rooftop",
-    "Playa",
-    "Hotel",
-    "Deportes",
-    "Viaje-aventura",
-    "Paseo",
-    "Ocio",
-    "Fútbol",
-    "Cursos-talleres",
-    "Seminarios-Conferencias",
-    "Stand-up"
-  ];
+  function handleCategorySelect(slug) {
+    setCategory(slug);
+    setSearching(false);
+    setQuery("");
+    setSearchResults([]);
+  }
 
+  function handleDateChange(val) {
+    setDateFilter(val);
+  }
 
-  const styles = {
-    page: {
-      position: "relative",
-      maxHeight: "100dvh",
-      maxWidth:'100vw',
-      color: "white",
-      overflow:'hidden'
-    },
+  function handlePriceChange(key, max, min) {
+    setPriceFilter(key);
+    setPriceMax(max !== undefined ? max : undefined);
+  }
 
-  background: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    maxWidth:'100vw',
-    height:'100dvh',
-    width:'100vw',
-    zIndex: 0,
-    pointerEvents: "none",
-  },
+  const title = (() => {
+    if (searching) return "Resultados para tu búsqueda";
+    if (category) {
+      const label = category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, " ");
+      const prefix = dateFilter === "hoy" ? "Hoy en" : dateFilter === "manana" ? "Mañana en" : "En";
+      return `${prefix} ${label}`;
+    }
+    return dateFilter === "manana" ? "Mañana en VibeMatch" : "Hoy en VibeMatch";
+  })();
 
-  // 🔥 Top-left logo
-  header: {
-    position: "absolute",
-    top: "20px",
-    zIndex: 100,
-    display:"flex",
-    width:'100%',
-    justifyContent:'space-between',
-  },
-
-  logo: {
-    fontSize: "24px",
-    fontWeight: "600",
-    letterSpacing: "1px",
-    marginLeft:'15px'
-  },
-
-  // Mobile toggle button (top-right)
-  mobileToggle: {
-    marginRight:'15px',
-    zIndex: 100,
-    background: "rgba(255,255,255,0.1)",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255,255,255,0.2)",
-    borderRadius: "50%",
-    width: "40px", height: "40px",
-    display: "flex",
-    alignItems: "center", justifyContent: "center",
-    cursor: "pointer",
-    color: "white",
-  },
-  // Overlay behind mobile sidebar
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(0,0,0,0.4)",
-    zIndex: 99,
-  },
-
-  desktopContainer : {
-    position: "fixed",
-    top: 100,
-    zIndex:800,
-    marginLeft:'15px'
-  },
-
-
-  // 🔥 Center container
- centerContainer: (hasSearched) => ({
-    position: "fixed",
-    marginTop: hasSearched ? "70px" : "35vh",
-    display: "flex",
-    justifyContent: "center",
-    width: "100%",
-    zIndex: 2,
-    transition: "margin 0.5s ease",
-  }),
-
-  // 🔥 Input wrapper (important)
-  inputWrapper: {
-    position: "relative",
-    width: "550px",
-    maxWidth: "90%",
-  },
-
-  // 🔥 Input styling
-  input: {
-    width: "100%",
-    padding: "14px 0px 14px 30px", // 👈 left padding added
-    fontSize: "16px",
-    borderRadius: "999px",
-    border: "1px solid white",
-    background: "white",
-    color: "black",
-    outline: "none",
-  },
-
-  // 🔥 Placeholder styling (subtle UX upgrade)
-  inputPlaceholder: {
-    color: "#aaa",
-  },
-
-  // 🔥 Button INSIDE input
-  innerButton: {
-    position: "absolute",
-    right: "5px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    padding: "8px 8px",
-    borderRadius: "999px",
-    border: "none",
-    background: "white",
-    color: "black",
-    cursor: "pointer",
-    fontWeight: "500",
-  },
-
-  resetButton: {
-  position: "absolute",
-  left: "12px",
-  top: "50%",
-  transform: "translateY(-50%)",
-  background: "transparent",
-  border: "none",
-  color: "black",
-  fontSize: "16px",
-  cursor: "pointer",
-  opacity: 0.7,
-  },
-
-  // Results section
-  resultsContainer: {
-    position: "relative",
-    zIndex: 2,
-    padding: "2rem",
-    maxWidth: "900px",
-    maxHeight:"80dvh",
-    marginTop:"135px",
-    marginLeft: "auto",
-    marginRight: "auto",
-    overflowY: "auto",
-    overflowX: "hidden",
-  },
-
-  grid: {
-    display: "grid",
-    gap: "15px",
-  },
-
-  card: {
-    background: "rgba(0,0,0,0.6)",
-    backdropFilter: "blur(10px)",
-    borderRadius: "14px",
-    padding: "16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-
-  cardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  // 🔥 Vibrant title
-  title: {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "#00ffd1", // matches your background palette
-    margin: 0,
-    textTransform: "uppercase"
-  },
-
-  // 🔥 Description
-  description: {
-    color: "white",
-    fontSize: "14px",
-    lineHeight: "1.4",
-    margin: 0,
-    display: "-webkit-box",
-    WebkitLineClamp: 3,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden"
-  },
-
-  // 🔥 Bottom row
-  footer: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: "5px",
-  },
-
-  category: {
-    fontSize: "13px",
-    color: "#aaa",
-    textTransform: "uppercase"
-  },
-
-  price: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "white",
-  },
-
-  // 🔥 Icon button
-  iconButton: {
-    background: "transparent",
-    border: "1px solid rgba(255,255,255,0.2)",
-    borderRadius: "50%",
-    padding: "6px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "white",
-  },
-
-    // 🔥 Loader container (centered)
-  loaderContainer: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: "40px",
-    gap: "10px",
-  },
-
-  // 🔥 Spinner
-  spinner: {
-    width: "40px",
-    height: "40px",
-    border: "3px solid rgba(255,255,255,0.2)",
-    borderTop: "3px solid #00ffd1", // vibrant color
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-  },
-
-  loaderText: {
-    color: "white",
-    fontSize: "14px",
-    opacity: 0.8,
-  },
-};
-
-  if (!mounted) return null;
+  const displayEvents = searching ? searchResults : events;
+  const eventCount = displayEvents.length;
 
   return (
-    <div style={styles.page}>
-
+    <div className="page">
       {/* Background */}
-      <div style={styles.background}>
+      <div className="background-colorbends">
         <ColorBends
           colors={["#ff5c7a", "#8a5cff", "#00ffd1"]}
           rotation={0}
@@ -353,133 +123,99 @@ export default function Home() {
           autoRotate={1}
         />
       </div>
-
-      {/* Foreground UI */}
-      {/* Top bar */}
-      <div style={styles.header}>
-        <h1 style={styles.logo}>VibeMatch</h1>
-        <div style={{position: 'relative', display:'flex' }}>
-          {/* Home button */}
-        
-        {isMobile && (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            style={styles.mobileToggle}
-          >
-            <SlidersHorizontal size={18} />
-          </button>)
-        }
-        
+      {/* ── Header ── */}
+      <header className="header">
+        <div className="header__left">
+          <span className="header__logo">VibeMatch</span>
+          <CategoryDropdown selected={category} onSelect={handleCategorySelect} />
         </div>
 
+        <div className="header__right">
+          <div className="view-toggle">
+            <button
+              className={`view-toggle__btn ${displayMode === "list" ? "view-toggle__btn--active" : ""}`}
+              onClick={() => setDisplayMode("list")}
+            >
+              <List size={15} /> Lista
+            </button>
+            <button
+              className={`view-toggle__btn ${displayMode === "map" ? "view-toggle__btn--active" : ""}`}
+              onClick={() => setDisplayMode("map")}
+            >
+              <Map size={15} /> Mapa
+            </button>
+          </div>
+        </div>
+      </header>
 
-      </div>
-
-      {/* Mobile overlay */}
-      {(isMobile && sidebarOpen) && (
-        <div style={styles.overlay} onClick={() => setSidebarOpen(false)} />
-    
-      )}
-    
-      {/* Mobile sidebar */}
-      {(isMobile && sidebarOpen) && (
-        
-        <div className="sidebar-scroll">
-            <CategorySidebar
-              CATEGORIES={CATEGORIES}
-              isMobile={isMobile}
-              selected={selectedCategory}
-              isOpen={sidebarOpen}
-              onClose={() => setSidebarOpen(false)}
-            />
-        </div>)
-      }
-
-
-      {/* Desktop sidebar */}
-      {!isMobile && 
-        (<div style={styles.desktopContainer} className="sidebar-scroll">
-          <CategorySidebar
-            CATEGORIES={CATEGORIES}
-            isMobile={isMobile}
-            selected={selectedCategory}
-            isOpen={true}
-            onClose={() => {}}
-          />
-        </div>)
-      }
-
-
-      {/* Centered search */}
-      <div style={styles.centerContainer(hasSearched)}>
-        <div style={styles.inputWrapper}>
+      {/* ── Search ── */}
+      <div className="search-area">
+        <div className="search-input-wrap">
           <input
+            className="search-input"
             type="text"
             placeholder="Describe el plan que quieres..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && searchEvents()}
-            style={styles.input}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleSearch()}
           />
-
-          <button onClick={searchEvents} style={styles.innerButton}>
-            <Search size={18} />
+          <button className="search-btn" onClick={handleSearch}>
+            <Search size={20} />
           </button>
-
-          {query && (
-            <button onClick={resetSearch} style={styles.resetButton}>
-              ✕
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Results */}
-      <main style={styles.resultsContainer} className="sidebar-scroll">
-        {loading && (
-          <div style={styles.loaderContainer}>
-            <div style={styles.spinner}></div>
-            <p style={styles.loaderText}>Cargando...</p>
-          </div>
-        )}
-
-      {!loading && hasSearched && events.length === 0 && (
-        <p>Lo sentimos, no se han encontrado resultados...</p>
+      {/* ── Filters (hidden during search) ── */}
+      {!searching && (
+        <div className="filters-row">
+          <DateFilter value={dateFilter} onChange={handleDateChange} />
+          <div className="filter-divider" />
+          <PriceFilter value={priceFilter} onChange={handlePriceChange} />
+        </div>
       )}
 
-      <div style={styles.grid}>
-        {events.map((event, index) => (
-          <div key={index} style={styles.card}>
-          {/* Top row: Title + action */}
-          <div style={styles.cardHeader}>
-            <h3 style={styles.title}>{capitalizeFirst(event.titulo)}</h3>
-
-            <a href={event.url} target="_blank" rel="noopener noreferrer">
-              <button style={styles.iconButton}>
-                <ExternalLink size={18} />
-              </button>
-            </a>
-          </div>
-
-          {/* Description */}
-          <p style={styles.description}>{event.descripcion}</p>
-
-          {/* Footer: category + price */}
-          <div style={styles.footer}>
-            <span style={styles.category}>{event.categoria}</span>
-
-            <span style={styles.price}>
-              {event.precio} {event.moneda}
-            </span>
-          </div>
+      {/* ── Search chip ── */}
+      {searching && (
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 1100, margin: "20px auto 0", padding: "0 24px" }}>
+          <SearchChip query={query} onClear={clearSearch} />
         </div>
-            ))}
-          </div>
-      </main>
+      )}
 
+      {/* ── Section title ── */}
+      {!loading && (
+        <div className="section-header">
+          <h2 className="section-title">{title}</h2>
+          <span className="section-count">{eventCount} planes</span>
+        </div>
+      )}
 
+      {/* ── Loading ── */}
+      {loading && (
+        <div className="loading-wrap">
+          <div className="spinner" />
+          <p>Cargando eventos...</p>
+        </div>
+      )}
 
+      {/* ── Content: List or Map ── */}
+      {!loading && displayMode === "list" && (
+        <div className="cards-scroll" ref={cardsRef}>
+          {displayEvents.length === 0 && (
+            <p className="empty-msg" style={{ width: "100%" }}>
+              No se encontraron eventos con estos filtros.
+            </p>
+          )}
+          {displayEvents.map((event, i) => (
+            <EventCard key={event.url || i} event={event} />
+          ))}
+        </div>
+      )}
+
+      {!loading && displayMode === "map" && (
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 1100, margin: "0 auto", padding: "0 24px 40px" }}>
+          <MapView events={displayEvents} />
+        </div>
+      )}
     </div>
-
   );
 }

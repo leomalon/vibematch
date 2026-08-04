@@ -13,3 +13,8 @@ class SearchResponse(BaseModel):
     categoria: str
     precio: float | None
     moneda: str
+    mood: list[str] = []
+    fecha_inicio: str | None = None
+    hora_inicio: str | None = None
+    latitud: float | None = None
+    longitud: float | None = None
