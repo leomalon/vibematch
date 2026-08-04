@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, List, Map } from "lucide-react";
 import CategoryDropdown from "@/Components/features/CategoryDropdown";
+import MoodFilter from "@/Components/features/MoodFilter";
 import DateFilter from "@/Components/features/DateFilter";
 import PriceFilter from "@/Components/features/PriceFilter";
 import EventCard from "@/Components/features/EventCard";
@@ -12,9 +13,10 @@ import "./page.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-function buildListUrl({ category, dateFilter, priceMax }) {
+function buildListUrl({ category, moodFilter, dateFilter, priceMax }) {
   const params = new URLSearchParams();
   if (category) params.set("categoria", category);
+  if (moodFilter) params.set("mood", moodFilter);
   if (dateFilter) params.set("fecha", dateFilter);
   if (priceMax !== undefined && priceMax !== null) params.set("precio_max", String(priceMax));
   return `${API_URL}/events/list?${params.toString()}`;
@@ -25,6 +27,7 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(null);
+  const [moodFilter, setMoodFilter] = useState(null);
   const [dateFilter, setDateFilter] = useState("hoy");
   const [priceFilter, setPriceFilter] = useState("gratis");
   const [priceMax, setPriceMax] = useState(0);
@@ -36,7 +39,7 @@ export default function Home() {
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const url = buildListUrl({ category, dateFilter, priceMax });
+      const url = buildListUrl({ category, moodFilter, dateFilter, priceMax });
       const res = await fetch(url);
       const data = await res.json();
       setEvents(data);
@@ -45,7 +48,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [category, dateFilter, priceMax]);
+  }, [category, moodFilter, dateFilter, priceMax]);
 
   useEffect(() => {
     if (!searching) fetchEvents();
@@ -78,6 +81,14 @@ export default function Home() {
 
   function handleCategorySelect(slug) {
     setCategory(slug);
+    setMoodFilter(null);
+    setSearching(false);
+    setQuery("");
+    setSearchResults([]);
+  }
+
+  function handleMoodSelect(slug) {
+    setMoodFilter(slug);
     setSearching(false);
     setQuery("");
     setSearchResults([]);
@@ -128,6 +139,7 @@ export default function Home() {
         <div className="header__left">
           <span className="header__logo">VibeMatch</span>
           <CategoryDropdown selected={category} onSelect={handleCategorySelect} />
+          <MoodFilter selected={moodFilter} onSelect={handleMoodSelect} />
         </div>
 
         <div className="header__right">

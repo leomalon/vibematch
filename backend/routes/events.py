@@ -30,6 +30,7 @@ from backend.core.container import search_service
 
 #Repositories
 from backend.repositories.experience_repository import ExperienceRepository, to_search_response
+from backend.db.models.models import Mood
 
 #Schemas
 from backend.schemas.search_filters import ResolvedQuery, ResolvedAvailability
@@ -90,6 +91,7 @@ def get_events_by_category(slug: str, db: Session = Depends(get_db)):
 @router.get("/list", response_model=list[SearchResponse])
 def list_events(
     categoria: str | None = Query(None, description="Category slug"),
+    mood: str | None = Query(None, description="Mood slug"),
     fecha: str | None = Query(None, description="hoy / manana / YYYY-MM-DD"),
     precio_max: float | None = Query(None, description="Max price (0 = free)"),
     nearby_lat: float | None = Query(None, description="Latitude for nearby search"),
@@ -106,6 +108,14 @@ def list_events(
         cat_id = repo.get_category_id(categoria)
         if cat_id:
             resolved.categoria_id = [cat_id]
+
+    # Mood filter.
+    if mood:
+        from backend.ingestion.normalizers import normalize_key
+        mood_row = db.execute(select(Mood)).scalars().all()
+        match = next((m for m in mood_row if normalize_key(m.nombre) == mood), None)
+        if match:
+            resolved.moods_id = [match.id]
 
     # Date filter.
     if fecha:

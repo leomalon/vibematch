@@ -39,3 +39,4 @@ class ResolvedQuery(BaseModel):
 
     tags: list[str] = Field(default_factory=list)
     busqueda_texto: list[str] = Field(default_factory=list)
+    mood_slug: str | None = None

@@ -1,5 +1,6 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
+import { Calendar } from 'lucide-react';
 import './DateFilter.css';
 
 const PRESETS = [
@@ -8,7 +9,6 @@ const PRESETS = [
 ];
 
 export default function DateFilter({ value, onChange }) {
-  const [showPicker, setShowPicker] = useState(false);
   const inputRef = useRef(null);
 
   const isCustom = value && !PRESETS.find(p => p.key === value);
@@ -27,17 +27,15 @@ export default function DateFilter({ value, onChange }) {
         </button>
       ))}
 
-      <div className="pill pill--icon" onClick={() => inputRef.current?.showPicker?.()}>
-        📅 Elegir fecha
+      <div className={`pill pill--icon ${isCustom ? 'pill--active' : ''}`} onClick={() => inputRef.current?.showPicker?.()}>
+        <Calendar size={14} />
+        Elegir fecha
         <input
           ref={inputRef}
           type="date"
           className="date-filter__hidden-input"
           value={isCustom ? value : ''}
-          onChange={(e) => {
-            onChange(e.target.value);
-            setShowPicker(false);
-          }}
+          onChange={(e) => onChange(e.target.value)}
         />
       </div>
     </div>
