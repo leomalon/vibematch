@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, LayoutGrid } from 'lucide-react';
 import './CategoryDropdown.css';
@@ -24,6 +24,7 @@ export default function CategoryDropdown({ selected, onSelect }) {
   const ref = useRef(null);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     function handleClick(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     }

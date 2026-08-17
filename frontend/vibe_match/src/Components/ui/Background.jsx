@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import './ColorBends.css';
@@ -163,7 +164,8 @@ export default function ColorBends({
     });
     rendererRef.current = renderer;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+    renderer.setPixelRatio(dpr);
     renderer.setClearColor(0x000000, transparent ? 0 : 1);
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
@@ -181,11 +183,11 @@ export default function ColorBends({
 
     handleResize();
 
-    if ('ResizeObserver' in window) {
+    if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
       const ro = new ResizeObserver(handleResize);
       ro.observe(container);
       resizeObserverRef.current = ro;
-    } else {
+    } else if (typeof window !== 'undefined') {
       window.addEventListener('resize', handleResize);
     }
 
@@ -212,8 +214,11 @@ export default function ColorBends({
 
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-      if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
-      else window.removeEventListener('resize', handleResize);
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      } else if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', handleResize);
+      }
       geometry.dispose();
       material.dispose();
       renderer.dispose();
@@ -273,6 +278,7 @@ export default function ColorBends({
   ]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const material = materialRef.current;
     const container = containerRef.current;
     if (!material || !container) return;

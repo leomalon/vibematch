@@ -1,12 +1,5 @@
 import './EventCard.css';
-
-function toSlug(text) {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/\s+/g, '-');
-}
+import { getCategoryImage } from './categoryImages';
 
 function formatPrice(precio, moneda) {
   if (precio === null || precio === undefined) return '';
@@ -16,10 +9,11 @@ function formatPrice(precio, moneda) {
 }
 
 export default function EventCard({ event }) {
-  const slug = toSlug(event.categoria || '');
   const price = formatPrice(event.precio, event.moneda);
   const timeStr = event.hora_inicio ? event.hora_inicio.slice(0, 5) : '';
   const dateStr = event.fecha_inicio || '';
+  const imageSrc = getCategoryImage(event.categoria);
+  const altText = event.categoria || 'Evento';
 
   return (
     <a
@@ -28,7 +22,14 @@ export default function EventCard({ event }) {
       target="_blank"
       rel="noopener noreferrer"
     >
-      <div className={`event-card__image grad-${slug}`}>
+      <div className="event-card__image">
+        <img
+          src={imageSrc}
+          alt={altText}
+          className="event-card__category-image"
+          loading="lazy"
+        />
+        <div className="event-card__image-overlay" />
         <span className="event-card__badge">{event.categoria}</span>
       </div>
 

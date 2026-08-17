@@ -1,3 +1,4 @@
+'use client';
 import { Sparkles, X, ArrowLeft } from 'lucide-react';
 import './SearchChip.css';
 

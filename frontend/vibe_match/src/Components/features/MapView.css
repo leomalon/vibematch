@@ -7,29 +7,100 @@
   z-index: 1;
 }
 
+/* ── Event marker ── */
+.map-event-marker {
+  background: none !important;
+  border: none !important;
+}
+
+.map-event-pin {
+  width: 12px;
+  height: 12px;
+  background: #00ffd1;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 255, 209, 0.5);
+}
+
+/* ── User location marker ── */
+.map-user-marker {
+  background: none !important;
+  border: none !important;
+}
+
+.map-user-dot {
+  width: 16px;
+  height: 16px;
+  background: #3b82f6;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+  position: relative;
+}
+
+.map-user-pulse {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.25);
+  animation: userPulse 2s ease-out infinite;
+}
+
+@keyframes userPulse {
+  0%   { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* ── Popup ── */
 .map-popup {
   font-family: inherit;
+  min-width: 160px;
 }
 
 .map-popup__title {
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 4px;
+  color: #fff;
 }
 
 .map-popup__cat {
   font-size: 12px;
-  color: #888;
-  margin-bottom: 4px;
+  color: #aaa;
+  margin: 0 0 6px;
+  text-transform: capitalize;
+}
+
+.map-popup__addr {
+  font-size: 12px;
+  color: #999;
+  margin: 0 0 6px;
+}
+
+.map-popup__moods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.map-popup__mood {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: rgba(0, 255, 209, 0.15);
+  color: #00ffd1;
 }
 
 .map-popup__price {
   font-size: 13px;
   color: #00ffd1;
   font-weight: 600;
+  margin: 0;
 }
 
-/* Override Leaflet's default font */
+/* Override Leaflet popup chrome */
 .map-container .leaflet-popup-content-wrapper {
   border-radius: 12px;
   background: rgba(20, 20, 30, 0.95);

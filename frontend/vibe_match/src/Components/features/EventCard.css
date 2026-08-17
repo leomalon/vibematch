@@ -23,6 +23,24 @@
   position: relative;
   width: 100%;
   height: 160px;
+  overflow: hidden;
+}
+
+.event-card__category-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.event-card:hover .event-card__category-image {
+  transform: scale(1.05);
+}
+
+.event-card__image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.6) 100%);
 }
 
 .event-card__badge {
@@ -37,6 +55,7 @@
   backdrop-filter: blur(8px);
   color: #fff;
   text-transform: capitalize;
+  z-index: 1;
 }
 
 /* ── body ── */
@@ -73,34 +92,3 @@
   font-weight: 600;
   color: #00ffd1;
 }
-
-/* ── gradient backgrounds by category ── */
-.grad-arte-cultura     { background: linear-gradient(135deg, #00b4d8, #2dd4bf); }
-.grad-teatro           { background: linear-gradient(135deg, #c084fc, #818cf8); }
-.grad-conciertos       { background: linear-gradient(135deg, #f472b6, #818cf8); }
-.grad-entretenimiento  { background: linear-gradient(135deg, #f472b6, #c084fc); }
-.grad-bar              { background: linear-gradient(135deg, #f472b6, #c084fc); }
-.grad-restaurante      { background: linear-gradient(135deg, #34d399, #2dd4bf); }
-.grad-huarique         { background: linear-gradient(135deg, #34d399, #fbbf24); }
-.grad-heladeria        { background: linear-gradient(135deg, #c084fc, #f472b6); }
-.grad-cafeteria        { background: linear-gradient(135deg, #34d399, #2dd4bf); }
-.grad-rooftop          { background: linear-gradient(135deg, #00b4d8, #c084fc); }
-.grad-playa            { background: linear-gradient(135deg, #38bdf8, #fbbf24); }
-.grad-hotel            { background: linear-gradient(135deg, #818cf8, #c084fc); }
-.grad-deportes         { background: linear-gradient(135deg, #38bdf8, #34d399); }
-.grad-viaje-aventura   { background: linear-gradient(135deg, #34d399, #fbbf24); }
-.grad-paseo            { background: linear-gradient(135deg, #38bdf8, #34d399); }
-.grad-ocio             { background: linear-gradient(135deg, #c084fc, #f472b6); }
-.grad-futbol           { background: linear-gradient(135deg, #34d399, #38bdf8); }
-.grad-cursos-talleres  { background: linear-gradient(135deg, #818cf8, #38bdf8); }
-.grad-seminarios-conferencias { background: linear-gradient(135deg, #818cf8, #c084fc); }
-.grad-stand-up         { background: linear-gradient(135deg, #f472b6, #fbbf24); }
-.grad-cine             { background: linear-gradient(135deg, #818cf8, #f472b6); }
-.grad-danza            { background: linear-gradient(135deg, #f472b6, #c084fc); }
-.grad-exposicion       { background: linear-gradient(135deg, #c084fc, #818cf8); }
-.grad-feria            { background: linear-gradient(135deg, #fbbf24, #f472b6); }
-.grad-museo            { background: linear-gradient(135deg, #818cf8, #38bdf8); }
-.grad-musica           { background: linear-gradient(135deg, #f472b6, #818cf8); }
-.grad-fiesta           { background: linear-gradient(135deg, #f472b6, #fbbf24); }
-.grad-festivales       { background: linear-gradient(135deg, #fbbf24, #f472b6); }
-.grad-default          { background: linear-gradient(135deg, #00b4d8, #c084fc); }
