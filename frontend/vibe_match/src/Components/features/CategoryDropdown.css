@@ -73,6 +73,20 @@
   font-weight: 600;
 }
 
+/* ── Mood multi-select layout ── */
+.cat-dropdown__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cat-dropdown__check {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
 /* Scrollbar */
 .cat-dropdown__menu::-webkit-scrollbar { width: 4px; }
 .cat-dropdown__menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }

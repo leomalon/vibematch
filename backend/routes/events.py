@@ -31,6 +31,7 @@ from backend.core.container import search_service
 #Repositories
 from backend.repositories.experience_repository import ExperienceRepository, to_search_response
 from backend.db.models.models import Mood
+from sqlalchemy import select
 
 #Schemas
 from backend.schemas.search_filters import ResolvedQuery, ResolvedAvailability
@@ -91,8 +92,9 @@ def get_events_by_category(slug: str, db: Session = Depends(get_db)):
 @router.get("/list", response_model=list[SearchResponse])
 def list_events(
     categoria: str | None = Query(None, description="Category slug"),
-    mood: str | None = Query(None, description="Mood slug"),
+    mood: list[str] | None = Query(None, description="Mood slug(s) - multiple allowed"),
     fecha: str | None = Query(None, description="hoy / manana / YYYY-MM-DD"),
+    precio_min: float | None = Query(None, description="Min price"),
     precio_max: float | None = Query(None, description="Max price (0 = free)"),
     nearby_lat: float | None = Query(None, description="Latitude for nearby search"),
     nearby_lng: float | None = Query(None, description="Longitude for nearby search"),
@@ -109,13 +111,13 @@ def list_events(
         if cat_id:
             resolved.categoria_id = [cat_id]
 
-    # Mood filter.
+    # Mood filter (supports multiple slugs).
     if mood:
         from backend.ingestion.normalizers import normalize_key
-        mood_row = db.execute(select(Mood)).scalars().all()
-        match = next((m for m in mood_row if normalize_key(m.nombre) == mood), None)
-        if match:
-            resolved.moods_id = [match.id]
+        mood_rows = db.execute(select(Mood)).scalars().all()
+        matched_ids = [m.id for m in mood_rows if normalize_key(m.nombre) in (mood if isinstance(mood, list) else [mood])]
+        if matched_ids:
+            resolved.moods_id = matched_ids
 
     # Date filter.
     if fecha:
@@ -133,6 +135,8 @@ def list_events(
                 pass
 
     # Price filter.
+    if precio_min is not None:
+        resolved.precio_min = precio_min
     if precio_max is not None:
         resolved.precio_max = precio_max
 

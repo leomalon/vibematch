@@ -1,23 +1,30 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, List, Map } from "lucide-react";
-import CategoryDropdown from "@/Components/features/CategoryDropdown";
-import MoodFilter from "@/Components/features/MoodFilter";
-import DateFilter from "@/Components/features/DateFilter";
-import PriceFilter from "@/Components/features/PriceFilter";
-import EventCard from "@/Components/features/EventCard";
-import SearchChip from "@/Components/features/SearchChip";
-import MapView from "@/Components/features/MapView";
-import ColorBends from "@/Components/ui/Background";
+import dynamic from 'next/dynamic';
 import "./page.css";
+
+const CategoryDropdown = dynamic(() => import("@/Components/features/CategoryDropdown"), { ssr: false });
+const MoodFilter = dynamic(() => import("@/Components/features/MoodFilter"), { ssr: false });
+const DateFilter = dynamic(() => import("@/Components/features/DateFilter"), { ssr: false });
+const PriceFilter = dynamic(() => import("@/Components/features/PriceFilter"), { ssr: false });
+const EventCard = dynamic(() => import("@/Components/features/EventCard"), { ssr: false });
+const SearchChip = dynamic(() => import("@/Components/features/SearchChip"), { ssr: false });
+const MapView = dynamic(() => import("@/Components/features/MapView"), { ssr: false });
+const ColorBends = dynamic(() => import("@/Components/ui/Background"), { ssr: false });
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-function buildListUrl({ category, moodFilter, dateFilter, priceMax }) {
+function buildListUrl({ category, moodFilter, dateFilter, priceMin, priceMax }) {
   const params = new URLSearchParams();
   if (category) params.set("categoria", category);
-  if (moodFilter) params.set("mood", moodFilter);
+  if (moodFilter && Array.isArray(moodFilter) && moodFilter.length > 0) {
+    moodFilter.forEach(m => params.append("mood", m));
+  } else if (moodFilter && typeof moodFilter === 'string') {
+    params.set("mood", moodFilter);
+  }
   if (dateFilter) params.set("fecha", dateFilter);
+  if (priceMin !== undefined && priceMin !== null) params.set("precio_min", String(priceMin));
   if (priceMax !== undefined && priceMax !== null) params.set("precio_max", String(priceMax));
   return `${API_URL}/events/list?${params.toString()}`;
 }
@@ -27,9 +34,10 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState(null);
-  const [moodFilter, setMoodFilter] = useState(null);
+  const [moodFilter, setMoodFilter] = useState(null); // null or array of slugs
   const [dateFilter, setDateFilter] = useState("hoy");
   const [priceFilter, setPriceFilter] = useState("gratis");
+  const [priceMin, setPriceMin] = useState(undefined);
   const [priceMax, setPriceMax] = useState(0);
   const [displayMode, setDisplayMode] = useState("list");
   const [loading, setLoading] = useState(false);
@@ -39,7 +47,7 @@ export default function Home() {
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const url = buildListUrl({ category, moodFilter, dateFilter, priceMax });
+      const url = buildListUrl({ category, moodFilter, dateFilter, priceMin, priceMax });
       const res = await fetch(url);
       const data = await res.json();
       setEvents(data);
@@ -48,7 +56,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [category, moodFilter, dateFilter, priceMax]);
+  }, [category, moodFilter, dateFilter, priceMin, priceMax]);
 
   useEffect(() => {
     if (!searching) fetchEvents();
@@ -87,8 +95,8 @@ export default function Home() {
     setSearchResults([]);
   }
 
-  function handleMoodSelect(slug) {
-    setMoodFilter(slug);
+  function handleMoodSelect(selectedMoods) {
+    setMoodFilter(selectedMoods);
     setSearching(false);
     setQuery("");
     setSearchResults([]);
@@ -101,6 +109,7 @@ export default function Home() {
   function handlePriceChange(key, max, min) {
     setPriceFilter(key);
     setPriceMax(max !== undefined ? max : undefined);
+    setPriceMin(min !== undefined ? min : undefined);
   }
 
   const title = (() => {
@@ -160,74 +169,77 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Search ── */}
-      <div className="search-area">
-        <div className="search-input-wrap">
-          <input
-            className="search-input"
-            type="text"
-            placeholder="Describe el plan que quieres..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleSearch()}
-          />
-          <button className="search-btn" onClick={handleSearch}>
-            <Search size={20} />
-          </button>
+      {/* ── Main Content ── */}
+      <main className="main-content">
+        {/* ── Search ── */}
+        <div className="search-area">
+          <div className="search-input-wrap">
+            <input
+              className="search-input"
+              type="text"
+              placeholder="Describe el plan que quieres..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSearch()}
+            />
+            <button className="search-btn" onClick={handleSearch}>
+              <Search size={20} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* ── Filters (hidden during search) ── */}
-      {!searching && (
-        <div className="filters-row">
-          <DateFilter value={dateFilter} onChange={handleDateChange} />
-          <div className="filter-divider" />
-          <PriceFilter value={priceFilter} onChange={handlePriceChange} />
-        </div>
-      )}
+        {/* ── Filters (hidden during search) ── */}
+        {!searching && (
+          <div className="filters-row">
+            <DateFilter value={dateFilter} onChange={handleDateChange} />
+            <div className="filter-divider" />
+            <PriceFilter value={priceFilter} onChange={handlePriceChange} />
+          </div>
+        )}
 
-      {/* ── Search chip ── */}
-      {searching && (
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 1100, margin: "20px auto 0", padding: "0 24px" }}>
-          <SearchChip query={query} onClear={clearSearch} />
-        </div>
-      )}
+        {/* ── Search chip ── */}
+        {searching && (
+          <div style={{ marginBottom: "16px" }}>
+            <SearchChip query={query} onClear={clearSearch} />
+          </div>
+        )}
 
-      {/* ── Section title ── */}
-      {!loading && (
-        <div className="section-header">
-          <h2 className="section-title">{title}</h2>
-          <span className="section-count">{eventCount} planes</span>
-        </div>
-      )}
+        {/* ── Section title ── */}
+        {!loading && (
+          <div className="section-header">
+            <h2 className="section-title">{title}</h2>
+            <span className="section-count">{eventCount} planes</span>
+          </div>
+        )}
 
-      {/* ── Loading ── */}
-      {loading && (
-        <div className="loading-wrap">
-          <div className="spinner" />
-          <p>Cargando eventos...</p>
-        </div>
-      )}
+        {/* ── Loading ── */}
+        {loading && (
+          <div className="loading-wrap">
+            <div className="spinner" />
+            <p>Cargando eventos...</p>
+          </div>
+        )}
 
-      {/* ── Content: List or Map ── */}
-      {!loading && displayMode === "list" && (
-        <div className="cards-scroll" ref={cardsRef}>
-          {displayEvents.length === 0 && (
-            <p className="empty-msg" style={{ width: "100%" }}>
-              No se encontraron eventos con estos filtros.
-            </p>
-          )}
-          {displayEvents.map((event, i) => (
-            <EventCard key={event.url || i} event={event} />
-          ))}
-        </div>
-      )}
+        {/* ── Content: List or Map ── */}
+        {!loading && displayMode === "list" && (
+          <div className="cards-grid" ref={cardsRef}>
+            {displayEvents.length === 0 && (
+              <p className="empty-msg" style={{ width: "100%", gridColumn: "1 / -1", textAlign: "center" }}>
+                No se encontraron eventos con estos filtros.
+              </p>
+            )}
+            {displayEvents.map((event, i) => (
+              <EventCard key={event.url || i} event={event} />
+            ))}
+          </div>
+        )}
 
-      {!loading && displayMode === "map" && (
-        <div style={{ position: "relative", zIndex: 1, maxWidth: 1100, margin: "0 auto", padding: "0 24px 40px" }}>
-          <MapView events={displayEvents} />
-        </div>
-      )}
+        {!loading && displayMode === "map" && (
+          <div style={{ position: "relative", zIndex: 1, width: "100%" }}>
+            <MapView events={displayEvents} />
+          </div>
+        )}
+      </main>
     </div>
   );
 }

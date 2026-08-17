@@ -19,19 +19,29 @@
   pointer-events: none;
 }
 
-/* ── Header ──────────────────────────────────────────────── */
+/* ── Header (FIXED - always visible) ──────────────────────────────── */
 .header {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 200;
   isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  background: rgba(10, 10, 10, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 10, 10, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Main content area ───────────────────────────────────── */
+.main-content {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 120px 24px 40px; /* Top padding accounts for fixed header height */
 }
 
 .header__left {
@@ -87,7 +97,7 @@
   z-index: 1;
   max-width: 700px;
   margin: 0 auto;
-  padding: 32px 24px 0;
+  padding: 16px 24px 0; /* Reduced from 32px to bring closer to header */
 }
 
 .search-input-wrap {
@@ -141,14 +151,22 @@
 /* ── Filter row ──────────────────────────────────────────── */
 .filters-row {
   position: relative;
-  z-index: 1;
-  max-width: 1024px;
-  margin: 0 auto;
-  padding: 20px 24px 0;
+  z-index: 50;
+  max-width: 700px;
+  margin: 12px auto 16px; /* Reduced from 24px to bring closer to search bar */
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 24px;
   flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Ensure dropdowns in filter row appear above cards */
+.filters-row .date-filter__custom-wrap,
+.filters-row .price-filter__custom-wrap {
+  z-index: 100;
 }
 
 .filter-group {
@@ -165,40 +183,58 @@
 
 /* ── Section title ───────────────────────────────────────── */
 .section-header {
-  position: relative;
-  z-index: 1;
-  max-width: 1100px;
-  margin: 28px auto 0;
-  padding: 0 24px;
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 24px; /* Align with cards grid edges */
 }
 
 .section-title {
   font-size: 22px;
   font-weight: 700;
   margin: 0;
+  position: relative;
+  z-index: 10;
 }
 
 .section-count {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.45);
+  margin-left: 4px;
 }
 
-/* ── Cards scroll ────────────────────────────────────────── */
-.cards-scroll {
-  position: relative;
-  z-index: 1;
-  max-width: 1100px;
-  margin: 16px auto 0;
-  padding: 0 24px 40px;
-  display: flex;
+/* ── Cards grid (Instagram-style vertical feed) ────────────────── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Responsive: 4 cols on large, 3 on medium, 2 on small, 1 on mobile */
+@media (max-width: 1150px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .cards-scroll::-webkit-scrollbar {
@@ -207,6 +243,7 @@
 
 /* ── Shared pill styles ──────────────────────────────────── */
 .pill {
+  position: relative;
   padding: 7px 14px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -227,6 +264,13 @@
   color: #000;
   border-color: #00ffd1;
   font-weight: 600;
+}
+
+/* Keep active pills visible on hover (don't override with dark bg) */
+.pill--active:hover {
+  background: #00ffd1;
+  color: #000;
+  border-color: #00ffd1;
 }
 
 .pill--icon {
